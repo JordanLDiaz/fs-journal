@@ -12,3 +12,4 @@ My name is Jordan Diaz. I am a student at [CodeWorks](https://boisecodeworks.com
   + [Resume](https://JordanlDiaz.github.io/resume)
   + Email: jordanldiaz29@gmail.com
   
+"# fs-journal" 
