@@ -1,4 +1,4 @@
-# JavaScript
+i# JavaScript
 Monday, October 31st, 2022
 
 -JS file names - app.js and others, but app.js is commonly used. Depends on preference
@@ -198,3 +198,148 @@ Using `` allows you to do string interpolation (sp?) which treats it like javasc
 4. added accuse()
 
 Takeaway - remember how to use .filter, sort, find, etc.
+
+Wednesday, November 2nd
+
+Storefront notes
+- Mid fidelity wireframe provided
+- designing out visual first - i like!
+- don't forget the style debug
+- 1 container each for header, body, footer (blue = container, red = row, green = col, purple = divs)
+- within body, 1 row with a col-8 and col-4.
+  - In col-8, 1 row that utilizes d-flex to stack in rows once space runs out in first "row"
+  - that 1 row has col-4
+  -in col-4 from earlier, just use divs.
+    -notice that button is justified to end, so be sure to give it its own div as parent that can be manipulated 
+
+Sammy's Sammies
+
+Menu section
+- put both containers first ( 1 in header, 1 in main)
+- section tags for main rows are helpful for organization, as is writing good notes throughout to keep track of what I'm doing. 
+- default to mobile development, add mobile view columns at same time as full screen (proactive, not reactive!)
+- repeat design elements could be made as css classes to cut down on workload.
+- justify-content-between for sandwich name and price, create new divs to separate them so that you can actually affect the spacing. If you have too many things contained w/i same element, it is harder to place things the way you want.
+
+Checkout Menu section
+  - anytime you want to justify/align content not w/in a container/row, be sure to d-flex
+  - borders: 
+    must have color, style, and width, but can be in any order. 
+    Make sure it's on the correct parent element or it won't work the way you want. If you have border errors, check its in the right spot. 
+    lots of bootstrap border styles 
+  - Margin and padding can be used interchangeably depending on the parent element you apply it to. 
+
+Javascript
+- Now that basic structure is laid out, let's make it functional
+- Want to be able to click on sandwich in menu and add it to cart
+  - created array in js w/dif sandwiches. properties = name and price. 
+- MAke buy function
+  - code small, test small. console.log first
+  - made function, then add onclick w/function to corrent element. Didn't make it a true button, but adding the onclick to a div makes it possible to interact with. This isn't best practice, but can be done. 
+  - added sandwich class with cursor: pointer to img so that mouse changes when hovering over img
+
+- Next added quantity to sandwich array properties so that we can add multiple of same items. We want to add sandwich I want to buy, and after finding the sandwich, increase the quantity. Directions need to be very explicit for computer. 
+- to find, inside buyBLT function put...: let sandwich = sandwiches.find(s => s.name == 'BLT')       (s is just shorhand for the new variable sandwich that was made)
+console.log(sandwich);
+- still inside buyBLT function, once we've found sandwich and checked console, now we need to access the quantity of sandwich...
+sandwich.quantity++
+console.log(sandwich);
+( this will help us add sandwiches but can only see in console.)
+
+- Next we actually need to draw the sandwiches to the cart by checking to see if quantity is greater than 0. If it is, we need to draw to cart
+- first we added more sandwiches to html and to sandwiches array, then created new functions to buy each kind of sandwich (see above process)
+- note that these functions are all basically the same, so we can consolidate by making new function call buySandwich
+
+  function buySandwich(sandwichName) {
+    let sandwich = sandwiches.find(s => s.name == sandwichName)
+    sandwich.quantity++
+    console.log(sandwich)
+  }
+
+  this combines all the different buy buttons into just one. we can comment out the old functions, and update our onclicks in html to include buySandwich('BLT'), buySandwich('
+  PBBD'), etc...
+
+We need a way to iterate through the sandwiches selected and add them to our cart. FOR LOOP with for each
+- /// test first!, then add drawCart function to buySandwich function so that it draws to cart each time a sandwich is selected.
+after console logging drawing cart, s, add let template and copy html template into js function.
+At this point we don't have an id, so we need to add one so we can link to js
+  - add function drawCart() {
+     let template = ''   <--moved let template here so that it would keep all selected in cart-->
+      sandwiches.forEach(s => {
+        if(s.quantity > 0) {
+          console.log('drawing cart', s); 
+          let template = ''    <-- took this and moved it outside forEach-->
+          template += `
+          <div>                 // took out div classes here just for this example
+            <p>${s.name} </p>
+            <p>${s.quantity}</p>   <-- add this to also be able to see quantity of each item in cart>
+            <p>${s.price}</p>
+          </div>
+        }
+      })
+      document.getElementById('cart').innerHTML = template
+  }
+
+  ** At this point it's drawing to cart, but only the one that was last selected. How to keep all selected? move the let template = '' to outside of forEach (see notes above in forEach)
+
+  How do we get total of each item? price * quantity - need to make new function and iterate through all sandwiches. if there is a sandwich, add its price/quantity to total
+  - in html wehnt to menu template and added new div for total:, gave it id='total'
+      <div>
+        <p> Total: </p>
+        <p>$ <span id='total'>0</span>
+      </div>
+  function drawTotal() {
+    let total = 0 
+    sandwiches.forEach(s =>{
+      total += s.price * s.quantity      // iterate through each sandwich, add new price to the total. don't forget to multiply by s.quantity
+    })
+    document.getElementById('total').innerText = total.toFixed(2)     // don't need innerHTML because we're not adding HTML here, just affecting the text. toFixed specifies rounding off to 2 decimal places only so we don't get crazy decimal values. number in parentheses specifies how many decimal places we want
+  }
+
+  once this is done, we can add drawTotal to drawCart function (after getElementById), need to do this each time. 
+
+How to actually buy sandwiches - create checkout function that clears out the cart when we click buy
+- if quanitity is greater than 0, thats when it draws cart, so we want to reset quantity of all sandwiches to 0
+- don't forget to add function to onclick in html
+
+function checkout() {
+  sandwiches.forEach(s => {
+    s.quantity = 0
+  })
+  drawCart()    // since drawTotal is inside drawCart function, we don't need to also put drawTotal here.
+
+}
+
+Add alert to ask user if they're sure they want to buy
+window.confirm will give pop up 'yes' or 'no' for action.
+- to do this we want to wrap the logic inside of our confirm...
+
+function checkout() {
+  if(window.confirm('Are you sure you want to clear cart?')) {
+    sandwiches.forEach(s => {
+      s.quantity = 0
+    })
+  }
+  drawCart()
+}
+
+To remove just one item that's already in cart. when I click button, find sandwich I want to remove, then decrease amount by 1 
+- return to html and find sandwich name/price, add quantity p tag, then add mdi icon for x 'button' with an i class
+  <i class="mdi mdi-close text-danger></i>
+** note icons are inline text so we can style right in i tag. don't forget to update js with mdi too
+- add onclick to html i class with removeItem('${s.name}')
+- find returns just one item while filter returns array
+
+function removeItem(sandwichName) {
+  let foundSandwich = sandwiches.find(s => s.name == sandwichName)
+  console.log(foundSandwich, 'found sandwich');
+  foundSandwich.quantity--
+  console.log('decrease', foundSandwich);
+  drawCart()
+}
+
+debugger -> add above line you want to check and view each step in console to see if/where something is going wrong
+
+HTML/CSS restyling
+ add css class with .sandwich-img class containing height and any other properties you want to affect your element. 
+  - make sure it's on correct tag so it doesn't affect more than you want it to. 
