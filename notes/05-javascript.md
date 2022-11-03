@@ -343,3 +343,155 @@ debugger -> add above line you want to check and view each step in console to se
 HTML/CSS restyling
  add css class with .sandwich-img class containing height and any other properties you want to affect your element. 
   - make sure it's on correct tag so it doesn't affect more than you want it to. 
+
+
+November 3rd, 2022
+
+functions 3 different way
+1. function doSomething () {
+  console.log('did something');
+}
+
+let doSomethingElse = function (){
+  console.log('did something else');
+}
+
+Anonymous (not used often)
+let thing 
+thing = () => {
+  console.log('What am i doing?');
+}
+
+All of these are invoked the same way: thing()    doSomethingElse()     doSomething()
+
+
+Lecture Project - Zookeeper
+
+Initial styling
+ - Completed set up with header, body color, console logged js loaded, main = container fluid
+ - added animals array w/name, animal emoji, status
+ -in html made section w/class = row, id = animal-pens
+ - made section for animals. 
+ - progress bar (bootstrap class = progress bar for hunger)
+ - In css - added stylying for pen
+ - marquee behavior: moves the element within its col, applied to koko element.
+ - made animal class w/height and width, so that the animal stays contained as marquee moves it. Lots of other styling ideas in there
+ - added another marquee within other marquee, created new class with .marquee>pen class so that pen gets bigger and koko moves all around
+
+ Feed Koko
+ - add feedKoko function to js, then add onclick to html element that targets it 
+ function () {
+  let animal = animals.find(a => a.name == 'Koko')
+  animal.hunger += 5
+  console.log(animal);
+ }
+
+ ** repeat for feedTanya and George, but create one for all 3, then add onclick for each animal w/ below function:
+
+ function feedAnimal(name) {
+  let animal = animals.find(a => a.name == name)
+  animal.hunger += 5
+  console.log(animal);
+ }
+
+ function hunger - want to make them GET hungry
+
+ function hunger() {
+  animals.forEach(a => a.hunger --)
+  console.log(animals);
+ }
+
+ Checked to make sure function actually decreased hunger then...
+
+ setInterval(hunger, 1000)
+
+ this passes the instructions to decrease hunger every second, can see in console but not on screen, so before setInterval create new function:
+
+ function updateAnimals() {
+  animals.forEach(a => {
+    let animalElm = document.getElementById(a.name)
+    console.log(animalElm);
+    let hungerBar = animalElm.querySelector('.progress-bar')
+    console.log(hungerBar);
+    hungerBar.style.width = a.hunger + '%'                // used this to target progress bar class
+  })
+ }
+
+ when console log updateAnimals(), should see koko data
+
+ once you make sure the progress bar is going down, add updateAnimals() to feedAnimal function and hunger() function
+
+ When we update our animals, we want to update status too. create new function -->
+
+ function updateStatus () {
+  let animal = animals.find(a => a.name == name)
+  if (animal.hunger > 50) {
+    animal.status = '😊'
+  } else if {
+    animal.status > 20 {
+      animal.status = '😐'
+    } else if {
+      animal.status > 0 {
+        animal.status = '😠'
+      } else  {
+        animal.status = '💀
+      }
+    }
+  }
+ }
+
+ to updateAnimals() - added update status directions.
+ - if animal died, can resucitate, so need to add if statement to feedAnimals() to prevent from being fed once dead (view mick's code w/note)
+
+ - to updateAnimal() added keel the animal w/...
+ if(a.status == '💀'){
+  let mrq1 = animalElm.querySelector('mrq1)
+  let mrq2 = animalElm.querySelector('mrq2)
+  mrq1.stop()
+  mrq2.stop()
+ }
+
+ added mrq1 and mrq2 class to html elements for each animal w/in marquee behavior elem. this should stop animal from moving
+
+ repeat process to add more animals to zoo, be sure to update array and html 
+
+ add getPaid()  (for now will show in console)
+
+ function getPaid() {
+  let paycheck = 0
+  animals.forEach(a => {
+    switch(a.status) {
+      case: '😊' :
+        paycheck += 10
+        break
+      case: ' ' :
+      paycheck += 5
+        break
+      case: ' ' :
+      paycheck
+          break 
+      case: ' ' :
+      paycheck
+        break
+    }
+  })
+  console.log('got paid', paycheck);
+  money += paycheck
+  lastPaycheck = paycheck
+  drawMoney()
+ }
+
+ setInterval(getPaid, 12000)
+
+ now in html add new section for paycheck, with ids paycheck and money, then in js add drawMoney()
+ add floating dollar class to css, also added @keyframes for paid and die to move emojis different ways (checkout reference for more)
+
+ function drawMoney() {
+  let payElm = document.getElementById('paycheck)
+  let moneyElm = document.getElementById('money)
+  payElm.innerHTML = `<div class="floating-dollar">💰{$lastPaycheck}</div>`
+  moneyElm.innerText = '$'
+ }
+
+ marquee scrollAmount can affect the speed the emoji moves - vary each animal to dif speed.
+query in js is used to grab classes, id, and more. Far more versatile than just getElementById, which obvi can only grab id
