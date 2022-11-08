@@ -1,4 +1,6 @@
 i# JavaScript
+
+Week 1
 Monday, October 31st, 2022
 
 -JS file names - app.js and others, but app.js is commonly used. Depends on preference
