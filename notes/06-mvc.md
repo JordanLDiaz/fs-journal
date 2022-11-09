@@ -373,3 +373,17 @@ then changed template to ListTemplate so that its grabbing the html we put in Li
   - once happy w/form, copy and comment out so we can add to template in model. add to activecartemplate w/ return ``, add id to modal-content (id="details"), 
   - in controller, update drawActiveCar function with setHTML...then update string interpolation.
 
+  11. Want to add a date the entry was created. go to car.js --> add:
+    this.createdAt = new Date()   (this is built-in js code, passing in no params will give today's date.)
+  - update details template w/string interpolation.
+  - added this.createdAt.toLocaleDateString() in interpolation.
+
+  12. local storage - store utils has reference functions (saveState and loadState)
+    - have to supply key (name of collection (e.g. cars), and..)
+    - in service --> add saveState (this saves to local storage, but still need to load)
+    - appState -> add cars = loadState('cars', [Car])
+    - now we need to save again so it actually saves any changes if we delete.  (saveState('cars', appState.cars))
+
+13. static method --> GetCarForm() 
+- only exists on uninstantiated classes, added to car model, then in controller class, added Car.GetCarForm() (not instantiated)
+
