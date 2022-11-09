@@ -264,3 +264,112 @@ then changed template to ListTemplate so that its grabbing the html we put in Li
   - put this in trash function too.
   - when item is set to localstorage, it loses its class and becomes regular pojo, so when it's taken back out, it needs to get that class back. 
   -to do this in appstate --> under coins = 0 changes myGachamans = loadState('myGachamans', [Gachamon])   // this is where they are kept, and where they will be. 
+
+
+  Wed., November 9th, 2022
+  GregsList
+
+  Steps for setup
+  1. reference "figma" - Craigslist, to decide what we want in our model. 
+    - open up models and make Car.js, 
+      export class Car{
+        constructor(data)       // data in place of all the properties we want, see reference for all data types we placed here. 
+    }
+
+  2. now we need appState.js to store our actual data. 
+  update the appstate event emitter w/Car instead of value, this helps with our intellisense! also add car [new Car]
+  ****When typing Car notice the intellisense that pops up and hit TAB to actually link to models/car.js, then add one instance of car with all the properties. 
+
+  3. Build out template for model in html. Can get rid of app class (do same in app.js).
+  - view bootstrap cards for options for car cards. add to template, replacing the info w/stuff from appState car Array. Changed href to button instead. Copy this template, comment out and move it to car model under constructor array.
+
+  4. Use getter function for the template above. 
+    get CardTemplate() {
+      return `
+      HTML GOES HERE 
+      `
+    }
+
+  **Don't worry about changing this yet. Will get there.
+
+  5. Now make CarController. add export class CarsController() {}
+  Always start with console.log after this! 
+  
+  6. But first in app.js, add carsController = new CarsController() and invoke so it links, 
+
+  7. now we want a private function in controller so user doesn't have control over it. User can only call things inside carsController class. 
+  - add  _drawCars() in controller. be sure to tab on all intellisense so it links the appstate. 
+  - view drawCars function w/template, etc in reference. 
+  - add car id in html 
+  - be sure to call function in carsController class/constructor
+    _drawCars() (just asking it to draw cars on page load.)
+  - should now be able to draw saturn to page.
+
+7. still? add new car to appstate array. this will post the same info as saturn because we haven't updated the html in our model. Update with string interpolation ${this.make}, etc. We use this.make, etc because that's how we labeled in Cars model array. Replace one interpolation at a time and test! this... refers to the instance of the class
+
+8. delete button - in model-->cardTemplate, add button for delete with i class. Reload page to view. Now we want an alert to pop up to make sure they want to delete. We want to do this by adding onclick to model w/ app.carsController.removeCar()  (will need to go to controller and add delete function, first console to make sure it works.)
+- added title tag to html button in model.
+- after consolelogging, now create rest of function. w/pop alert (there is a pop.js utils reference, but also can go to sweet alert site which has nicer looking window popups). Add sweet alert cdn to head!!!
+- ADD Pop.toast('')      // don't forget intellisense!
+- pop utility has confirm function. depending on which button they click, it returns boolean value. 
+- async await - see note, we'll learn more about this next week. 
+
+- When you need to change data in appstate, that's when you should create service file. add carsService file, then export. add removeCar() method in carsService class, and console to make sure they're communicating. Once we've done that, can move on. 
+
+- To be sure we're deleting correct instance, we can add a this.id to our model using generateId (method that we can reference in utils)
+  this.id = generateId()     //don't need data. on this one because it's just running a function. Don't forget to add string interpolation to our template for this.id.
+  - add this to button in model, AND add carId as param in controller function removeCar, but then need to update that in service file too. Othewise it won't work because service didn't expect to be passed that. 
+
+- delete w/filter:
+  - in service: add to removeCar() --> let filteredArray = appState.cars.filter(c => c.id != cardId)
+  ** this gives new array of cars where all of cars id's do NOT match id I passed down. 
+  - appState.cars = filteredArray
+  console.log(''...)
+  - at this point it disappears from console, but not page. We need to add appState.on('cars', _drawCars)    -- this guys job is to listen for something to change, and then communicate the function to occur (drawCars) to the appState.
+
+  9. Create a car --> html hard code in main above car template
+  - bootstrap for forms (we used floating labels in forms, see adjustments in reference for changes, especially the id's!).
+  - made reference form for all properties we want to include. 
+  - add onsubmit="app.carsController.createCar() to form
+  - add submit button
+  - console in controller w/ createCar() {console.log('creating car'
+  )}. currently page refreshes auto, so add window.event.preventDefault to createCar() in controller. now it will stay in console. 
+  - now to grab data out of form: 
+    - let form = window.event.target   //'Target anything that has to do with the event that just happened', then console (form)
+  - reference form handler --> get form data that will return us an object with that data (need to fully open this reference).
+  - in controller --> let formData = getFormData(form), console again.
+  - first time it created empty object, so we need to add name to each input field in form. don't need one for generate id because we have a function handling that for us. 
+  - can change button TYPE to change it's function. buttons have type=submit auto'd, so if we don't want it to submit, change to type=button, and make sure it has correct function attached based on what you want it to do. Reset type exists!
+  -img field ... type=url
+  - after making form, add input required to each field so they can't submit empty form. 
+
+  - controller --> need to send the data to service. In createCar(), add
+  carsService.createCar(formData) (createCar will throw error, click, ctrl . and create function.)
+  - service --> now has createCar(formData), so add
+  let newCar = new Car(formData), then console.
+  - after console works, need to store to appState
+    appState.cars = [...appState.cars, newCar]     //spread operator = dumps out data to new array
+
+10. Active details drawn to page
+- view modals on bootstrap: good place to show details of the car. grab html and add new section with this in html. past underneath footer so its hidden until needed. 
+- we want to attach model to 'see details' button. grab toggle and target, go to car.js, find see detail button, past toggle and traget there.
+- add onclick="app.carsController.setActiveCard('${this.id}') to modal, 
+  then in carscontroller --> create setActiveCar(carId) {
+    carsService.setActiveCar(carId)
+  }
+  - services --> in setActiveCar....
+  let foundCar = appState.cars.find(c => c.id == carId), then console.log
+  - now need to setActive car in appState, copy new intellisnse(@type...) after cars[]
+    activeCar = null   // notice, not an array!
+  - service --> in setActive, add
+    appState.activeCar = foundCar
+  -- controller --> add new listener
+    appState.on('activeCar', _drawActiveCar)
+
+    create new function _drawActiveCar()
+      console.log('draw active car')
+
+  - now to actually add it to modal by creating new template in html first (hard code hidden in modal)
+  - once happy w/form, copy and comment out so we can add to template in model. add to activecartemplate w/ return ``, add id to modal-content (id="details"), 
+  - in controller, update drawActiveCar function with setHTML...then update string interpolation.
+
