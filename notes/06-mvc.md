@@ -300,7 +300,7 @@ then changed template to ListTemplate so that its grabbing the html we put in Li
   7. now we want a private function in controller so user doesn't have control over it. User can only call things inside carsController class. 
   - add  _drawCars() in controller. be sure to tab on all intellisense so it links the appstate. 
   - view drawCars function w/template, etc in reference. 
-  - add car id in html 
+  - add car id in html (this later became listings so we could use it for multiple pages)
   - be sure to call function in carsController class/constructor
     _drawCars() (just asking it to draw cars on page load.)
   - should now be able to draw saturn to page.
@@ -387,3 +387,118 @@ then changed template to ListTemplate so that its grabbing the html we put in Li
 13. static method --> GetCarForm() 
 - only exists on uninstantiated classes, added to car model, then in controller class, added Car.GetCarForm() (not instantiated)
 
+Thursday, Nov 10th, 2022
+
+Redacted - 
+1. Created index, model, CasesController.js, CasesService.js, app.js, AppState.js
+2. model --> Case.js
+  export class Case {
+    constructor(data) {
+      this.id = generateId()              // in utilities, guarentees unique property
+      this.report = data.report           //report will contain all the info
+      this.clearance = data.clearance     // levels of secrecy
+      this.agency = data.agency           // tells who recorded this
+      this.date = data.date || new Date()               // time report was submitted OR backdated date, always put data.date first because it will read that first.
+    }
+
+    get ListTemplate() {
+      return this.report       //made this right out of the gate to start getting cases on page. 
+    }
+  }
+
+3. appState.js --> cases = [
+  new case ({
+    report: 'hudahahufa',
+    clearance: 'secret',
+    agency: 'emoji',
+    date: 
+  }),    // also added 2 more cases, this is just test data that will be replaced later
+]
+
+4. controller --> 
+export class CasesController {
+  constructor(){
+    console.log('fjd')    // make sure this logs
+  }
+}
+
+
+5. service --> class CasesService {
+
+}
+ export const casesService = new CasesService()
+
+ 6. app.js 
+
+ 7. controller --> add function _drawCases() {
+    let cases = appState.cases
+    let template = ''
+    cases.forEach( c=> template += c.ListTemplate)
+    set HTML('case-list', template)     // then add _drawCases() to constructor (step4), after making sure this draws to page, comment it out so you can build out actual template in index (this came AFTER step 9)
+ }
+
+ 8. index --> got rid of app id, added section for case list, added id="case-list"
+ 9. added section for active case (col-9)
+ 10. added template in html for case-list, copied, commented out, placed in model in ListTEmplate. Replace data spots w/string interpolation.
+ 11. after listTEmplate, add:
+  get ComputeTitle  (still w/in class)
+
+12. index --> under case-list section, added new case form section. place clearance, agency, date here.
+select element gave drop down menus w/options, in input line added id and name, select line has id and name as well. 
+added required and min and max length for agency
+added button w/iclass
+- tested
+on form add onsubmit to link to our form
+
+13. controller --> 
+createCase() {
+  window.event.preventDefault()   // prevents page from reloading
+  console.log()
+  const form = window.event.target
+  let caseData = getFormData(form)
+  console.log()     // now should get info to log to console w/details
+  casesService.createCase()        // sends to service
+  form.reset
+}
+
+14. service --> 
+add createCase(caseData) to class CasesService    w/const newCase = ... and appState.cases =...
+
+15. controller --> add listener to cases (appState.on('cases...))
+got an error for line 8 in appState even though error was in controller, missing caseData param
+
+16. model --> added if statement for report in get ComputeTitle 
+
+BREAK - he reformatted form with way for clearance to default to our options only w/selected. 
+
+Active case steps
+17. model --> listTEmplate(), added onclick to app.casesController.setActive('${this.is}')
+18. controller --> created setActive(id) w/ console to make sure it worked, then...
+casesService.setActive(id)   // link - to services, then add id to console log.
+19. services --> const activeCase = appstate.cases.find(c=> c.id == id) 
+
+20. appstate --> add activeState = null, then in service add appstate.activecase= activecase
+21. controller --> create drawActiveCase function w/console, then in constructor add listener (appState.on after other listener)
+22. index --> add to active case section, create template, comment out and add to activeCase in model. replace data spots w/string interpolation. 
+23. controller -> in drawActiveCase add setHTML('active-case', activeCase.ActiveTemplate)
+
+24. want to prevent being able to look at reports until password is entered. think clearance type. 
+appstate --> added classifiedWords = {'codeworks', 'ufo', 'mole'....etc}
+25. model --> create new getter 
+  get ClassifiedTemplate     // same as active template, but change this.report to thi
+
+  also add get ComputeClassifiedReport() {
+    let reportArr = this.report.split(' ')      //this turns report into array of words
+    let redactedArr = reportArr.map(word => {                 //array.prototype.map() creates copy of array with actions performed on it.
+      if(appState.classifiedWords.includes(word)) {
+        return '   '} else
+        return word
+      }
+
+    })
+  }
+
+  26. model --> updated classifiedTemplate with onclick button to unlock case. 
+  27. controller --> added async unlockCase()     w/ pop.prompt
+  28. appstate --> added clearanceLevels to appstate class
+  29. servie --> added unlockCase(input) in CasesService class
