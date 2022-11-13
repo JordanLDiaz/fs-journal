@@ -502,3 +502,10 @@ appstate --> added classifiedWords = {'codeworks', 'ufo', 'mole'....etc}
   27. controller --> added async unlockCase()     w/ pop.prompt
   28. appstate --> added clearanceLevels to appstate class
   29. servie --> added unlockCase(input) in CasesService class
+
+Checkpoint tips
+  generate list of things first before active note
+  - mock requirements = note on mock
+  - color picker - look up bootstrap component (or pick from bootstrap colors)
+  - undraw = placeholder content (stretch goal though)
+  - musical note = mdi icon for color
