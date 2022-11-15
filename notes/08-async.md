@@ -3,7 +3,7 @@
 Monday, November 14th - HP Trading Cards Lecture
 
 Asynchronous code - helps to use multiple platforms to run code together asynchronously.
-- Because we are working with things outside of our control (eg waiting to get functions/things from other places), we don't have control over that so we need to have asynchronous functionality. (idk...he explained better)
+- Because we are working with things outside of our control (eg waiting to get functions/data from other places), we don't have control over that so we need to have asynchronous functionality. (idk...he explained better)
 - typically we think of code running from top to bottom, line by line. Async still goes from top to bottom, but allows us to pause on certain lines of code and wait for something to happen. 
   - think of pop.confirm - we had to wait for user to make a decision, so that paused our code. without async await, it immediately removed our code without letting the user confirm. This is why we use async! (small level example)
   - allows us to pause code from continuing until it has something to return
