@@ -126,3 +126,137 @@ reminder: axios is library that wraps around fetch, which goes to get the data, 
 - how to access info from api can be hard, make sure url is accurate and that model is interpreting information correctly. 
 ** generate api url is helpful on trivia question. 
 - notice the data is inside results   (res.data.results.map)   // the results is an extra layer we need to make sure we include or our path is wrong and won't work. 
+
+AXIOS Notes - from precoursework
+- This is primary way we will make XHRhttp requests throughout rest of course.
+- uses promises with all requests
+- use to help avoid repeating segments of code.
+
+1. Bring axios into code by adding script tag w/JS tags in index
+
+
+Tuesday, November 15th, 2022
+
+* bcw-sandbox/herokuapp.com - lots of references ('endpoints') and schemas for various data types (schema is word for model we use when referring to our databases rather than our own data we have put directly into model)
+* add /api/cars (or other section you want to access)
+* sandbox allows us to create, edit, delete things. This is a shared endpoint though, so just be aware of that. We'll learn to create our own api's next week.
+
+Gregslist Async - today's project
+1. created controller, service, model with skeleton.
+2. app js -> added carsController
+3. model -> added cars = []
+  deleted all old value files once everything was set up, can do if feel comfy, but don't have to. Just better organization and fewer files. 
+
+4. referred to car sandbox to view schema and its rules. 
+5. model --> added constructor w/data in class Car (straight from last week's proj, except no generateid and mileage because not in sandbox)
+  - make sure the way each property is written matches the sandbox to prevent easy errors.
+  - created simple get ListTemplate() {
+    return this.make + this.model
+  }
+
+  6. controller --> added to bottom of CarsController class
+  async getCars() {
+    try {
+      await carsService.getCars()
+    } catch (error) {
+      Pop.error(error.message)
+      console.log(error)    // this helps error persist in console because if you just do pop error, it will disappear after a few sec.
+    }
+  }
+
+    - tested app.carsController.getCars() in console and got error
+  
+  7. service --> in getCars() in carsService add:
+  const res = await axios.get('api url')     //don't forget script tag in index for axios!!
+  console.log('[got cars]', res.data)      // always console.log res.data first when using axios, before you do anything else. Makes sure we know what res.data is  before we can do anything with it. 
+
+  after consoling, we saw that it was the collection of data we want, but that won't always be the case so need to make extra sure it's what we want. 
+  - next we want to save it; add
+  appState.cars = res.data.map(c=> new Car(c))           // don't forget to double check path/layers here so you have correct path.
+
+  - next we want to draw it.
+  8. controller --> added drawCars function w/template, forEach, and setHTML()         // right now we're just dumping data to page ,d ont worry about how it looks.
+
+  9. controller --> added listener to carsController class 
+  appstate.on('cars', _drawCars)
+  this.getCars()
+
+  10. index --> pulled car template from last week's, changed id in appstate to listings instead of app. 
+  11. model --> changed out our simple template to one from last week. updated string interpolation, made sure imgUrl capitalization matched. 
+  thisID - we commented out because there is an id property in the api, so we no longer have to handle that, uncommented it, but made it say data.id instead of generate Id because WE are not the ones generating. 
+
+  12. model --> added static getCarFormTemplate (copied from last week's)
+  13. index --> added button for cars in header w/onclick
+  14. controller --> added 
+  function drawCarForm() {
+    setHTML('listing-form', Car.GetCarFormTemplate())
+  }
+  then added _drawCarForm() to constructor   and refreshed       // on refresh, form loaded.
+
+  15. controller --> added async createCar() {
+    // see reference for all lines here
+  }
+    // checked errors, had 404 that was just a bad img link, just be aware of that for sandboxes
+    // added new car to form and submitted, showed to console, we had imgUrl as just img, needed to update name in getCarFormTemplate, worked.
+
+  16. controller --> in async createCar() added  try/catch w/await (see reference)
+  17. service --> added const res = await axios.post('url', carData)        
+  console.log('[POST CAR]', res.data )
+  // got 400 error, went to network, checked out red error, in preview we saw database wanted hexcode for color instead of string, changed form to color type (gave colorpicker), this worked.
+  - in post car in console it added the other properties like id, also added to page.
+
+  18. service --> need to save to appstate
+  appState.cars = [...appState.cars, new Car(res.data)]
+
+19. Delete function
+controller --> after async createCar, add
+async removeCar(id) {
+  trye {
+    console.log('deleting', )
+  } catch {
+    pop.error(error.message)
+    console.log()
+  }
+}
+
+service --> add removeCar(id) {
+  const res = await axios.delete('url')   // added + id at end of url to show that there's a car at that location to delete
+  console.log('[DELETE CAR]', res.data)
+}
+added Pop.toast(res.data, 'success')     // because console just said deleted value, so toast confirms to user. Actually gone on refresh
+
+to get it to disappear w/o refresh, add to service
+appState.cars = appState.cars.filter(c => c.id != id)        // keep everything that doesn't have that id
+
+20. Adding edit button next to see details --> updated getListTemplate w/new button (look for mdi pencil)
+- after checking button on page, added onclick to editCar
+- added edit function between create and remove in controller w/async
+- also added setActive to controller after we updated button to setActive, declared method to go to service, added activCar=null in appstate w/@type...notice .Car[null]
+- then updated service setActive w/ let car = .....
+controller --> added listener for activeCar in constructor, and then added drawCarForm private function
+- added console log to activeCar
+
+21. controller --> in draw car form, pass active car, then in model, added car to getCarFormTemplate.
+- to onsubmit in above form, added ${car ? 'editCar()' : 'createCar()'}         // if theres a car, want line to end with appstate.car editCar, if there's not a car, let it end w/same but createCar
+
+don't forget to prevent default for editCar
+- added value input w/${car.make} to getCarFormTemplate (change each w/string interpolation)
+- confusion here
+- model -> added || '' to constructor data.id... etc (0 instead of '' for numbers)
+- in getCarFormTemplate, added 
+if (!car) {
+  car = new Car...// see reference, empty bracket here signals there is no data to be passed in
+}
+
+22. controller --> 
+await carsService.editCar(carData, id)
+
+added const carData = getFormData...
+then service --> in editCar, added:
+const res = await axios.put('url')    //again added + id,carData to end of url 
+console.log('[EDIT CAR]', res.data);         //now updates on refresh only so add. to service..
+let index = appState.cars.findIndex(c => c.id == id)
+appstate.cars.splice(index, 1, new Car(res.data))                 // we start at the index, splice out old and replace w/new
+appState.emit('cars')                       //be sure to trigger listener here
+
+23. added some pops to controller editCar, createCar, remove car (if(await pop.confirm('Are you sure...))
