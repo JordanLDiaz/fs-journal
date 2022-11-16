@@ -144,7 +144,7 @@ Tuesday, November 15th, 2022
 Gregslist Async - today's project
 1. created controller, service, model with skeleton.
 2. app js -> added carsController
-3. model -> added cars = []
+3. appState -> added cars = []
   deleted all old value files once everything was set up, can do if feel comfy, but don't have to. Just better organization and fewer files. 
 
 4. referred to car sandbox to view schema and its rules. 
@@ -220,7 +220,7 @@ async removeCar(id) {
 }
 
 service --> add removeCar(id) {
-  const res = await axios.delete('url')   // added + id at end of url to show that there's a car at that location to delete
+  const res = await axios.delete('url/')   // added + id at end of url to show that there's a car at that location to delete. Don't forget the / at end of url or else the delete function won't work because the url and id aren't joined properly.
   console.log('[DELETE CAR]', res.data)
 }
 added Pop.toast(res.data, 'success')     // because console just said deleted value, so toast confirms to user. Actually gone on refresh
@@ -253,10 +253,16 @@ await carsService.editCar(carData, id)
 
 added const carData = getFormData...
 then service --> in editCar, added:
-const res = await axios.put('url')    //again added + id,carData to end of url 
+const res = await axios.put('url')    //again added + id,carData to end of url, and again dont forget the /after the url so it connects to id correctly. 
 console.log('[EDIT CAR]', res.data);         //now updates on refresh only so add. to service..
 let index = appState.cars.findIndex(c => c.id == id)
 appstate.cars.splice(index, 1, new Car(res.data))                 // we start at the index, splice out old and replace w/new
 appState.emit('cars')                       //be sure to trigger listener here
 
 23. added some pops to controller editCar, createCar, remove car (if(await pop.confirm('Are you sure...))
+
+Reflection from Gegslist Async:
+now that we have a few different pages, we don't want any of them to load as soon as the page loads. Instead we want the user to select which category they want. To do this, I had to move the this.getHouses and this.getCars from the constructor to the showHouses() and showCars() functions. I also had to move the _drawHouseForm and _drawCarForm from the constructor to the showHouses() and showCars(). Do the same with jobs!
+
+Notes from jobs
+1. added button for jobs in header first, then created model, controller, and service. 
