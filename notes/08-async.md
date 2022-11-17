@@ -299,6 +299,7 @@ appstate
 9. controller --> added listener to spell class, should now be able to get data dump to page.
 10. index --> added col-3 w/row (section api spells), updated id to api-spells.
 11. model --> updated template w/html for spell name, then in controller updated setHTML to apispells
+
 12. now we wnt to be able to click on any of these spells and draw the data for that spell from the api to page.
 13. model --> added onclick to listTemplate html for getOneSpell('${spell.index}). NOTE - no this in a static list
 14. controller --> added 
