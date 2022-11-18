@@ -410,5 +410,169 @@ after checking, added appstate.myspells = appstate.myspells.filter....
   * this line cuts the list of spells down to only prepared ones, and finds the length of these. then added sethtml
   - added appstate.emit to trigger listener in service.  
   (added if else statement...look at controller function drawmyspells)
-  - 
 
+
+Thursday, November 17th, 2022
+NASA Picture of the Day API
+* For this api we need to supply api key, entered info and it gave us key and url w/key. click link and it will take us to our api. 
+* showed example of adding more keys onto url (see documentation for formatting on the original api)
+
+Lecture goal: build app that will allow us to query nasa api, render pic to page, and be able to update the query.
+- want to render pic as background info and render the other details. Add data picker somewhere, ability to save pictures. 
+
+Steps:
+1. She started w/sending first get request. Made axios service first
+  set up w/export = axios.create, baseurl (leave api key off for now).
+  - added timeout: 8000, in case it takes awhile to come through. 
+  - added object for params: {api_key: entered key here in string}            //supply name of params and the value (read docs to see formatting for these otherwise it won't work). now when we send a request it will hit the api and then tack the key onto the end of url
+
+2. Created NasaController and NasaService, set up skeletons. 
+Controller -->consoled constructor to make sure its hooked up.
+hook up app.js (register controller)
+
+3. controller --> add
+async getApod   w/try catch, errors, await, declare getApod to open in service
+service --> created getApod w/async await, const res, log the res
+index --> link axios script
+conroller --> this.getApod() in constructor. 
+** strting w/service calls first helps us to see what data we're working with BEFORE we actually build our model out. 
+- viewed network tab here to see how url has been updated
+
+4. model --> NasaApod.js. built out constructor data after viewing data in console to see what we want. 
+* left hand side w/this.date, is what we want it to be called on our end, just make sure right hand side matches the apod api.
+
+5.created appstate --> for now we just want one, so just added apod = null, updated type import
+service --> added appstate.apod = new NasaApod(res.data)       // creates new instance with res.data
+then console the appstate.apod           //helps us check if it gives us what we want.
+
+6. controller --> outside class, add "hidden" function for drawpicture w/ let apod, document.queryselector('body')style.backgroundImage = 'url(${apod.imgUrl})'   //this targets entire body w/ an inline style
+in constructor --> add listener for draw
+- check app, should now load background image. 
+
+7. want to restyle background 
+css --> styled body
+
+8. Now we want to render rest of details to page. 
+index --> hard code how we want this section to look like.
+- added d-flex to container which helps the col-6 span the length of the container.
+- once happy w/layout, added apodtemplate stub, copy, comment out, add to detailTemplate in model, updated w/string interpolation.
+- don't forget id in row above apod temp in html
+- updated draw function w/setHTML
+
+9. want to add copyright to the page IF it has one. 
+model --> updated w/this.copyright = data.copyright || 'NASA'
+- index --> updated footer w/copyright icon and nasa
+- add id to nasa p tag, copy, comment out, updated drawpicture() in controller w/setText (no html here)
+
+10. model --> updated detailsTemplate w/apod-body and header
+css --> target apod-body w/visibility amd opacity(this hides the html from user, but its still in dom, display none on the otherhand removes from dom)
+- .apod-header:hover+.apod-body {
+  visibiity and opacity // this makes the body appear when you hover over header
+}
+- updated apod-body w/transtion (3s = dramatic AF, love it)
+
+11. adding date selector and favorite buttons
+index--> updated header w/col-6
+- date = input date
+- when we select date we want it to change to apod from that date
+controller --> add getApodByDate function in class w/try catch, async/await, console.
+- add onclick to date input in html (app.nasaController.getApodByDate()), added space-date name and id
+- onclick here just consoled everytime you click the datepicker, so instead let's change it to onchange because we want it to update onchange not just when clicked. should see picking date in console each time you change date now.
+
+12. contoller --> update getApodbyDate -- want to target the event that happened.
+add let dateInput = window.event.target
+console.log(dataInput, 'comment')
+* this gave us whole input in console, so add .value to dateInput so that I'm only getting the value of the change input. 
+should console correctly now. 
+
+<!-- 13.   file - preferences - settings - null check turn OFF to get rid of question marks. -->
+
+14. Want to send date to nasa apod
+controller --> added await nasaServie.getApodByDate.dateInput.value to getApodByDate function
+service --> declare method, pass date in param, start w/console('comment', date)  --makes sure this is the correct data in console
+- once we know we're getting data we're expecting, now we need to send request to api, but we need way to supply the date. To do so, we need to append that data to end of api url
+service --> getapodbydate(), add:
+async/await w/const res = await NasaApi.get('apod?date=' + date)
+* had to go to axios service and removed apod, then in nasa service, had to pass 'apod' into NAsaApi.get('apod')
+- log the res in getapodbydate.
+- now add the res.data to appstate.apod = new NasaApod(res.data)
+console log, should now update data on the page w/image and everything
+
+15. Want to display date to actually show date. 
+controller --> update getApod() by setting value for date picker, and want to set a "max date" to prevent user from selecting future date. 
+added let datePicker = document.getElementById('space-date')
+log datepicker, once you've seen it work, remove that log
+- add let ISODate = new Date().toISOString(), then log this
+- then add let date = ISODate.substring(0, 10), then log the date.  //the 0, 10 slices off extra values we don't want. 0 is where we start and 10 is how many characters we want. 
+- next set datepicker value = date AND
+- datePicker.max = date
+
+16. Now we want to be able to favorites - off-canvas to show all the ones we've favorited.
+- look at apod model in bcw sandbox, we want to make apods for jsam
+- create new model (FavApod.js), make skeleton w/this.id   this.imgUrl   this.date     this.user   (make sure naming conventions match our sandbox)
+
+** on break she updated some css styling
+
+17. add new FavsController and FavsService, make skeleton, then register controller in app.js
+
+18. constructor --> log to make sure it's linked
+19. index --> add favs template hard code w/col-6 buttons (placed below footer since it will not show on page load)
+- when we click notebook we want offcanvas to load with our list of favorites. went to bootstrap for how to
+- copied code for offcanvas into index w/id=favs-offcanvas, make sure you have all the toggles and arias. then test app
+- once it works, update the template for what we want it to look like.
+  * added placeholder image, delete icon, date (see stub w/fav template), copy, comment out, add to FavApod model w/get FavoriteTemplate, update string interpolation.
+
+20. now to assign favorites. we need to send post request to jsam apod
+- find heart button in html, add onclick="app.favsController.createFav()"
+controller --> create createFav() w/try catch, async/await, and console.log
+- make sure buttons linked correctly on app.
+- once you see it's linked, replace log with await, declare method to service.
+service --> createFav()... need to update axiosService w/instance for sandboxApi w/baseURL, timeout
+-favService --> await sandboxApi.post()                // we are trying to post to our sandbox so use post. updated () w/'api/jsam/apods', appstate.apod, then log the data.
+- make sure to link appstate to favsservice. 
+
+21. when we hit the fav button, we're just wanting to save it to a spot in memory somewhere. 
+favscontroller --> create method to getFavs() w/async await, try catch, error.
+   first console the favs (before the await), add this.getFavs() to constructor
+   - after checking console, update console to await, declare method to service
+   - service --> const res = await sandboxApi....
+   - w/console should now see the data.
+  
+  appstate --> create area to store these favs = [], update import type
+  service --> add appstate.favs = res.data.map(f => new FavApod(f)), then console the appstate.favs, 'appstate favs'
+  - moved appstate.favs = res.data.map to getFavs function
+  - service in createFavs --> add appstate.favs = [...appstate.favs, new FavApod(res.data)], then console. 
+
+  22. now to get our favs to actuallly draw to offcanvas
+  - controller --> create _drawFavs() w/let template, appstate.favs.forEach(f => template += f.FavoriteTemplate)
+  index --> find offcanvas, add favorites id
+  controller --> update setHTML for drawFavs, then add listener to constructor. should now show in offcanvas.
+
+23. now that they're in offcanvas, we want to be able to click a favorite and it renders to page.
+ - when we click image, want to call getApodByDate ()
+ --> model fav template, add onclik to image tag, supply w/string interpolation this.date (AS STRING)
+ - got error, checked out getApodByDate in controller, needed to update param w/date, also added:
+  if(!date) {
+    let dateInput...
+  } else {
+    await nasaService.getApodByDate(date)
+  }
+
+  24. When we update page w/a fav, now we want the date to update to that img's date in datepicker.
+  controller --> made _setDate(date) w/let datepicker = document.getElementById
+  updated getApodByDate w/  
+
+  25. How to remove one from favs
+  view favApod model vs other apod model, notice one has id, other doesnt. 
+  - updated trashcan w/slectable and onclick in favorite template, supply the deleteFav w/string interpolation for this.id
+  controller --> write deleteFav(favId), log to be sure it works. 
+  - once we see it works, add try catch, async await. declare method to service.
+  service --> const res = await sandboxApi.delete('api/jsam/apods/' + favId)  DONT FORGET / ON END OF URL!!!!
+  - should now delete on refresh. 
+  service --> appstate.favs = appstate.favs.filter(f => f.id != favId)     (OR let filtered array method...view commented out stuff here to see both options, they perform the same. one just aliases out the filtered array)
+
+  26. what if we delete one we diddn't mean to?
+  controller --> add pop.confirm to have user confirm
+
+  27. extra fun stuff - added off-canvas class to offcanvas, added new css class w/ background-color, backdrop-filter (blur), 
+  nasa controller --> added bootstrap.offcanvas to get offcanvas to disappear onclick of fav.
