@@ -576,3 +576,10 @@ favscontroller --> create method to getFavs() w/async await, try catch, error.
 
   27. extra fun stuff - added off-canvas class to offcanvas, added new css class w/ background-color, backdrop-filter (blur), 
   nasa controller --> added bootstrap.offcanvas to get offcanvas to disappear onclick of fav.
+
+
+checkpoint tips
+- need apis for todo, weather, image, quote, but not time.
+-for time: look up how to do update on an interval, time formatting. 
+weather icon: openweathermap.org - look at current weather data docs, the icon data in sandbox is what needs to go in undefined part of url (append to url...)
+-image tag for icon url, string intepolate the this.icon
