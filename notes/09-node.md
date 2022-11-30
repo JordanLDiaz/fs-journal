@@ -129,3 +129,53 @@ My turn to make Burger Shack...things to remember.
 - this gets rid of error handling while we're not using an actual database. 
 - when checking each id on api, be sure to enter the number of the actual id, not just word id.
 - need help figuring out postman, nothing would show in my response. 
+
+
+
+Tuesday, Nov 29th, 2022
+- After creating auth0 and mongodb files, made gregslistAPI folder. 
+1. made car. js model with export const CarSchema and object in new Schema with make, model, year, etc. Use value.js as example, 
+  - note: can put different properties in here like required, default, max/min length, etc.
+  -timestamp can be added here and then we don't have to worry about handling timestamps on our own.
+  -virtuals - more complicated getters, can be accessed on the model but doesnt actually exist on the model. 
+  - not worrying about creatorId today.
+
+- now that we've created model/schema, we need to tell database we're going to access it. 
+
+2. dbContext --> added Cars = mongoose.model('Car', CarSchema)   in the string can put what we want, but it's what will show on database. Look at values = for example. 
+- this tells api to grab from that db collection
+
+3. Make Controller and service with skeleton (view examples to help). controller --> added super, this.router, .get, and async getall w/try catch. 
+service --> added getAll function w/const and return cars
+
+4. opened postman here: collection --> get request w/localhost
+]- wasn't working, but later realized needed to download desktop version, then it worked.
+
+5. controller --> added .post in this.router and create function below getAll w/try catch, etc.
+6. service - declared create method in service w/const newCar = await dbContext.Cars.create(carData)
+return newCar
+
+7. in postman, made new request for http://localhost:3000/api/cars by putting the schema with an actual cardata in it. To do this...
+went to body and changed it to raw and json
+- added object for car w/make, model, year, etc. Plugged in data for actual car. make sure it's a post request here, then send. should see all the data to the right, has some new info (timestamps, id, etc).
+- then went back to get request and hit send, 
+
+8. controller --> added .delete('/:id', this.remove) in this.router, added async remove w/try catch
+service --> declared remove method to service. w/ const car = await dbContext.Cars.findByIdAndRemove(carId)
+return 'car gone'
+- did delete request in postman after respin and refresh, 
+- didn't quite work so we updated the remove function in service and continued checking postman to delete.
+
+9. controller -- added update method
+service --> declared method here.
+- went to postman, made put request with id appended to url, copied over schema from previous request, make sure its raw json, updated info and send. 
+updated update method in service with const original and original.make, etc. 
+updated AGAIN with ternaries:
+ original.make = carData.make ? carData.make : original.make (basically if the user gave a carData.make, put that, otherwise, keep the original.make that was entered. )
+
+ 10. controller --> const query = req.query, updated carsService.getall(query)
+ - allows us to append url in postman with ?model=Protege in order to search for specific car, or any with that model. It passes that query into our find in getAll()
+
+ 11. service --> appended a sort to end of query (whoops above step should be in service not controller...i think)
+ - tried a few different things here, like price, updated at, make, etc. 
+ - can do negative (-price) 
