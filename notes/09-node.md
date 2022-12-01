@@ -179,3 +179,128 @@ updated AGAIN with ternaries:
  11. service --> appended a sort to end of query (whoops above step should be in service not controller...i think)
  - tried a few different things here, like price, updated at, make, etc. 
  - can do negative (-price) 
+
+
+ Wednesday, November 30th, 2022
+ PingPong
+ Goals - authorization layer that forces users to login to use parts of api, access control, data relationships (is focus).
+
+ 1. Started w/classes. created model Class.js. set up skeleton w/ new schema
+ cohort, teamName, graduated, 
+ added timestamp w/virtuals (will use today, so don't forget this here!)
+ 2. made skeleton of controller and service, created dbContext and added Classes (this is reflected in MongoDb in how its saved)
+controller --> added get to constructor, created getAll(), declared method to services and completed getAll(). Could add query here, but don't have to. Remember this allows us to append url w/specific search date (e.g. ?cohort=LateFall22&graduated=false).
+* save, spin up, check postman
+** new info on postman - left side bar with collections allows you to save requests so you don't have to make new ones all the time. 
+** variables in each collection - go to main page for that collection, click variables, add local host url to initial variable, then in actual get request page, can do {{baseUrl}} with the rest of url and it puts the localhost there automatically.
+
+3. don't want user to be able to create classes unless logged in and authorized user. this is wehre things get different....
+MIDDLEWARE - use method
+- added .use((req, res, next) => logger.log(req)  to constructor
+- then added .post request to constructor (normal), created function in controller, but did throw new BadRequest in try
+*save, spin, made create class for post in postman, added schema to raw json w/actual data
+- postman waited forever because we never told the .use to return anything. need to add a next to the middleware. after log(req); next(). now it works! we did get console log in vscode
+- added private function in controller for _middleWareDemo, which does same as above.
+-added another .use(Auth0Provider.getAuthorizedUserInfo) see note. this mainly looks at incoming request/token, if there is token on that request, it goes to auth0.com and varifies person, if no token, kicks user out w/401, etc. 
+- how do we get network request to have token? 
+- example: catups, looked at network, if you look at header you'll see token.
+- in env, copied auth stuff, went to client, found env.js, and updated the domain, audience, and clientId with the info from our env. this connects both front and back end to auth0.
+- now if you go to localhost3000, you will see the auth0 settings and can login. now we see token in network, copied value of toke, went to postman and found auth tab, chose bearer toke, dropped the copied token in there. 
+- better way is to go to top level of pongping and authorization and put token info there. can also go to variables, amke new one for token, and then back in authorization we can put in {{auth}} just like we did with baseUrl
+
+4. added return to create with req.userInfo
+
+5. in class.js --> added coachId, this creates our first data relationship. The class is now the child of the coach. 
+- include ref that references the account schema in our dbcontext. This is a one-to-many relationship.
+
+6. controller --> updated create() w/ req.body.coachId = req.userInfo.id. this creates a coach id for the user so they don't have to do that.
+added const newClass and return res.send(newClass)
+-declared create() to service with classData, const newClass, return. 
+* respin, send post request and you'll now see coach id, which matches what we see in network. 
+
+7. class.js --> introduce first virtual. added a special virtual: 
+ClassSchema.virtual('coach', {
+  localField: 'coachId',
+  foreignField: "_id",
+  ref: 'Account',
+  justOne: true   (w/o just one, it will make the coach data an array...which we want sometimes, but not here)
+})
+
+8. service -> added .populate('coach') to getAll (virtual won't come back without this)
+* respin, do get request, now should see coach data. 
+
+9. added .delete to constructor, delete function (similar to what we've been doing but slight spin)
+- in await classesService.remove(req.params.id, req.userInfo) // rule that only coach of team can delete it. 
+- declare method to service w/ const classToRemov and throw new BadRequest, and another check:
+if(userInfo != classToRemove.coachId.toString()) throw new Forbidden('not your class')            // if userInfo is not the coachId don't let them delete.
+-if you do get past above line, we want to allow them to remove
+await classToRemove.remove()
+return `the ${classToRemove.teamName} was disbanded`
+* respin, sent delete request for specific id. 
+
+* showed example of trying to delete class from different coachId, got not your class error. 
+* putting the error code first helps keep code clean and uses "fail first" method. throws in checks first and then continues. 
+- if you have other checks you want to do, try to do single line checks with if statements so that it's more simple for the user. we could have combined the error checks above, but then we don't always know what the error is because it's too complicated. 
+
+10. created new model --> Player.js, set up skeleton w/name, wins, losses. timestamp
+- want to be able to tie player to specific class, so also added classId: {type: objectId}. put const objectId = Schema.Types.ObjectId above schema to define objectId
+- updated dbcontext. 
+- created players controller and service skeletons.
+
+11. controlelr --> in router, have .get, .use, .post.
+-.get(Auth0Provider.getAuthorizedUserInfo)
+- create getAll method, create method
+** in player.js added accountId w/ref and classId ref
+controller --> declare getAll and create to service, complete these functions, kept simple for now. 
+* respin, postman --> new post request w/name and classId, grabbed classId from get request, and sent. should now see player data.
+- added afew more players here too
+
+12. player.js --> added PlayerSchema.virtual('class', {
+  localField: 'classId',
+  ref: 'Class',
+  foreignField: '_id'
+  justOne: true
+})
+serivce --> added populate to getAll
+*respin, send request to players, should now see french oslos in data
+* back in service, updated .populate to include comment with 'teamName' so we only get the data we want without all the extras.
+
+13. added await player.populate to create() in service
+
+14. controller --> added update(), declared to service
+- added badrequest and forbidden checks (make sure params match what we have in controller)
+- what if we want player AND coach to be able to update info? how to get coaches info...add
+const playerClass = await dbContext.Classes.findById(player.classId)
+- then updated forbidden check with && playerClass.coachId.toString() !== userId
+- also added:
+player.wins = playerData.wins != undefined ? playerData.wins : playerWins (same w/player losses) see note for reminder about what this does/why we write this way. 
+ await player.save()
+ player.populate('class', populateFields)        //notice, populate Fields is something he abstracted out, but not necessary to do. 
+ return player
+ * respin, write new update player request
+
+ 15. making matches - dif type of relationship, match can have many players and many players can have many matches, so now we have many to many, whereas player could only have one class(team), so that was a dif relationship.
+-match.js w/skeleton (homePlayerId, awayPlayerId, winnerId, )
+- don't forget const ObjectId = Schema.Types.ObjectId above new Schema
+- created controller and service w/skeletons for create (not getAll)
+* respin, postman send post request, grabbed id from koko for home, miles for away, and koko for winner. then sent. 
+
+16. Match.js --> added
+MatchSchema .virtual for homePlayer and awayPlayer and winner
+
+17. matches service --> added populate to create()
+* respin, send post request. should now see home,away,winner.
+
+18. want to be able to see players matches
+players controller --> added .get('/:id/matches') to router, then added getPlayerMatches() under getAll(). 
+- notice we connect to matchesService, not playersService here
+- declare to service, specified playerId
+- in .find() focused just on matches where they are winner for now. 
+* respin, get request w/ :/id/matches
+
+planet proj
+1:1 (one planet can only be in one galaxy)
+1-many (galaxy can have many planets )
+many-many (species to colony) colony is like the match, ties species together and planet together. there can be many species on many planets. A species can colonize many planets and many species can colonize one planet. 
+
+* focus on create and get to focus on practicing relationships
