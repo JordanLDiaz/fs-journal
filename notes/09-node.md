@@ -304,3 +304,165 @@ planet proj
 many-many (species to colony) colony is like the match, ties species together and planet together. there can be many species on many planets. A species can colonize many planets and many species can colonize one planet. 
 
 * focus on create and get to focus on practicing relationships
+
+
+Thursday, December 1st, 2022
+Auth0 with Todo
+
+Set-Up
+1. created birdBrain project
+2. env --> upddate auth properties, update name of project in connection string.
+3. env.js in client - update domain audience and client id too.
+4. once those are in, spin it up! go to localhost3000, should now be able to sign in and see auth settings filled in. 
+
+Code time: Jerms doing the back-end, Sam doing the front-end
+1. Bird.js for bird schema
+  - showed enum for size
+  -peeperId type: Schema.Types.ObjectId      (so we need const above schema)   also included ref: 'Account' so that it references the account for that data. 
+  * good idea to add maxlength to properties to limit what user can do. don't want them adding super long string and then have to store that in our db. 
+2. registed bird schema in db context
+3. created birds controller w/skeleton, getAll()
+  -set up to be able to query
+4. created birds service w/skeleton, getAll()
+5. respin, postman --> new get request for birds, should get empty array
+6. controller --> added getBirdById(), declared to service   // even if you don't use this, it's a helpful ability to have 
+7. controller --> added .post for createBird, declared to service
+** respin, postman --> new post request w/raw JSON (this is the req.body)
+- added schema for bird w/actual data. No peeperId here because we don't want user to be able to create one or use someone elses, this should just come from app.
+- had to add a .use to controller before .post so that anything after the auth0 they have to be logged in first. 
+
+8. localhost --> network, toke, --> copy token, post in postman in authorization, put the bearer token here, then sent request. 
+- Got error that peeperId is needed, so went back to controller and added to createBird   (req.body.peeperId = req.userInfo.id)
+-Without this, we can't proceed cuz it needs login info to continue. 
+9. postman --> made new get request to test getting one bird by id, don't forget to append id to url
+
+--NOW switching dev, so he committed his changes, slacked sam the github link--
+-- after bringing down changes, don't forget to add env file at top level of proj (not in client, server, etc). Need to get env info from whoever started project.
+- in terminal ran npm i to find the env file, then spun up.
+
+10. client --> made client side model, for bird. 
+11. created appstate with birds = [], updated value import
+12. created birdsController and service with skeleton.
+13. app.js --> register controller
+14. localhost --> console, should see hello from controller
+15. controller --> created getBirds(), declare to service.
+16. axios service --> checked name of axios instance (server in this case)
+17. birds service --> to getBirds( added const res = await server.get('api/birds)), then log the res, controller, be sure to invoke the function, check console on localhost
+18. should now see birds in console, also check network tab.
+19. now wthat we're getting birds, save to appstate, so in service add appstate.birds = res.data.map(b => new Bird(b)), console to check what appstate looks like. should see any birds added now.
+
+20. index --> updated main with how we want things formatted. 
+21. main scss --> added styling for peeper-img. when checking app, didn't update styling, so in terminal sent npm i bootstrap, then do npm run sass, once both are there should now have compiled and app should load correctly.
+22. updated styling in index, once basics done, copied bird card, commented out, moved to birdModel, update w/string interpolation.
+23. discussed putting in something to populate user pic, but that's something we'll need to handle with a virtual in the back end, so we're leaving it for now. 
+
+24. controller --> draw(), for setHTML, need id, so went to index and added id="birds". add appstate.on in birdsController constructor.
+- refresh app page and should now see any birds in collection from back end.
+
+25. Img fluid class --> removed from card template, went to scss main and added .bird-img{
+  width: 100%,      // tells it to fit 100% of parent container
+  height: 45vh,     // don't want auto here, want to set same height for all so they are the same.
+  object-fit: cover,
+  }
+  ** see note in scss to see how to get sass files to load. 
+
+26. Now let's draw birds from the page!
+- grabbed modal from bootstrap which will hold bird details
+index --> put under footer, added bird-modal id, changed to modal-lg, want to add button that stays at bottom of page but scrolls with us.
+- in main, made new row, added emoji button w/sticky bottom
+- add data-bs-target, etc to make clickable. should now get modal pop up when clicked.
+
+27. added select input dropdown to handle enum (got from w3bschools).
+- checked server model for size options, and updated dropdown form to correspond. 
+-also updated checkbox with canFly, took out location section. 
+
+28. bird model --> created static GetBirdForm, in index added id=birdModalContent to modal-content line, then grabbed entire form from modal header down, commented out, moved to model. 
+
+29. index --> added onclick to add bird button, added getBirdForm( ) to controller. 
+- this method will handle drawing form to the modal, set the html there
+- added on submit to form tag in static getBirdForm template
+- controller --> added peepBird()
+- tried to add new bird to page using modal, should see data added to modal.
+
+30. declared peepBird() to service, tried adding new bird again. got error because canFly says on instead of true, updated controller --> peepBird() w/if (form.Data.canFly == 'on) {
+  formData.canFly = true {
+    else {
+      formData.canFly = false
+    }
+  }
+}      // hmmmmm idk what happened....don't do bool.
+
+* don't forget appstate w/push and emit so it draws on submit, not refresh. 
+* removed commented out modal from index and put in blank modal (modal-body)
+* grab from modal header to footer, comment out, put in model as ActiveBirdTemplate.
+* in cardTemplate, added data-bs-toggle=modal and databstarget=..., onclick="app.birdsController.setActive(id), added this.id to model
+
+31. controller --> made setActive(birdId), declare to service.
+32. updated appstate w/activeBird = null, updated type
+33. controller --> made private function for drawActive(), updated constructor w/listener. 
+34. updated active template in model w/string interpolation.
+
+Switched back to Jerms
+35. checked bottom left of vs code, see number of changes to commit, be sure to do that when switching coder.
+
+36. Now we want to get details of peeper onto object we want to send back. Need to do virtual to do this.
+In server - bird.js add BirdSchema.virtual...
+- virtual won't exist on schema until we populate in service (see createBird, added await bird.populate... specify details you want from it, AND populate in getAllBirds (can tack .populate onto existing const birds))
+* respin, postman, do get request, should now see birds with peeperId populated to object. 
+
+37. Now want others to be able to click eyeballs to say they've also seen that bird. This creates many to many relationship.
+-created Creep.js schema. need 2 id's to keep track of relationship (bird id (Schema.Types.ObjectId, and ref: 'Bird') and creeper id(Schema.Types.ObjectId, but ref is Account))
+- also want to get info of who also SAW bird (creeper). added timestamp w/virtuals: true, then added:
+CreepSchema.virtual('creep', {
+  etc
+})
+38. created creepsController and Service w/skeleton, including .post to be able to create. (becomeCreep), also added .use before .post because user needs to be logged in to do this. 
+- need to grab userId, so also add req.body.creepId = req.userInfo.id   // this sets the creepId to the userInfo id of whoever is logged in.
+- declare to service
+- don't forget to add creeps to dbContext
+* respin, new Create Creep request, in body need to include birdId only, grab one from get bird request. this set the birdId but not the creepId because we didn't populate yet. Go populate in creepService becomeCreep.
+* respin and send request again, now see lots of info for creep. What if we don't want all this info? Update the populate w/what we want. 
+
+39. Want to be able to unpeep...
+creepSErvice --> made findOneCreep(body), then updated  becomeCreep w/const foudnCreep.... w/if statement to say if it exists already, remove it.
+- need to make removeCreep() first.... this was complicated 😕 decided not to worry about this.
+
+40. Creep.js --> CreepSchema.index({creepId: 1, birdId: 1}, {unique: true})    // this says if using same bird id and creep id, it will throw error. This prevents user from "seeing" same bird multiple times. This is our fix to the earlier remove attempt. 
+* respin, send get request once, should see the data, send request again and should now get error which shows our code worked and prevents user from seeing one bird more than once. 
+
+41. BirdController --> added new .get('/:birdId/creeps', this.getCreepsByBirdId)    // url needs to be dif from other get request otherwise it won't know where to send it.
+-create getCreepsByBirdId(), awaited creepsService since we're getting creeps 
+declare to service and create.
+* respin, do new get request for Creep, checked ones with creeps and without. without should be empty array.
+- add populate to getCreepsByBirdId, should now see virtual in data in postman
+
+42. bird model --> added BirdSchema.virtual for creepCount. update birdsSErvice wcreepCount in getallbirds and createbird (in the populate).
+back in bird schema --> add count: true to virtual so it only counts how many creeps. 
+
+Jerms finished back end, push to github and sam will push up her changes and pull down jerms changes. 
+
+43. want to get user pic to change. on app, checked network birds to see updated info w/virtuals.
+bird model --> updated model w/creeper, string interpolation for peeperCount and peeper.picture.
+* refresh and user pic and creepcount should be updated. 
+
+44. when you click modal for a bird, it becomes active, want to pull creepdata
+in client, made creep model --> then made creepsController and Service.
+- made getCreeps() 
+* check getCreeps w/string interpolation in url in service. add listener to constructor, then refresh and check network/console. 
+
+45. updated creep model with some flattened objects (e.g. this.name = data.name.creep)
+back in bird model --> updated activeTemplate w/new div for creep deets (look for id=creeps)
+- moved this to creep model (just line with img), string interpolated, 
+- creepsController --> created drawCreeps(), added listener to constructor w/creepers NOT activeBird, activeBird caused lag. 
+
+46. Want to be able to click eye button to show creeping. 
+client bird.js --> add onclick to cardTemplate creepcount button. Calling to creepsController, not bird. 
+creepsController --> added becomeCreep(), declare to service, 
+- in await server, be sure to put birdId in {} so it's recognized as object, otherwise won't know it's a bird id. 
+added const bird = appstate...
+bird.creepCount++
+appState.emit('birds')
+
+
+HACKATHON Prep
+
