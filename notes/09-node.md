@@ -307,7 +307,7 @@ many-many (species to colony) colony is like the match, ties species together an
 
 
 Thursday, December 1st, 2022
-Auth0 with Todo
+Auth0 with BirdBrain
 
 Set-Up
 1. created birdBrain project
