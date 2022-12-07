@@ -102,7 +102,7 @@ Component Parts
       - finally update all team in template to teamProp
       - in setup(props)       //put props in as param, and changed team.score to props.teamProp.score
 
-  ** props are data passed from parent component to child, they get passed as attributes on component tag. 
+  ** props are data passed from parent component to child, they get passed as attributes on component tag.
 
 
 
