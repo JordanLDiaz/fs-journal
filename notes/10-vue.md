@@ -105,6 +105,23 @@ Component Parts
   ** props are data passed from parent component to child, they get passed as attributes on component tag.
 
 
+  All Spice
+  * check out scss vid for tips on updating footer for webpage...
+  * if you get stuck on a bug and can't figure it out, double check that all your imports are THERE and working! ESPECIALLY THE USEROUTE!!
+
+  * Watch set up vid for first couple steps...forgot about notes.
+  min 7:00 -->
+  5?. added recipes = [] to appstate.
+  2. recipeServices --> skeleton w/const res = await api.get('/recipes')
+  appstate.recipes = res.data
+  3. HomePage --> add {{recipes}} to template w/class="home"  //just says to dump all recipes to page, no styling/html
+  - homePage --> "life-cycle hook" lives inside setUp() --> 
+  onMounted(() => {      //this loads the content when component hits the page. 
+  recipe
+  })
+
+
+
 
 Vue Lecture Notes - 
 - Creating vueMiner - bcw create w/vue starter
@@ -359,3 +376,335 @@ vueFlix
   - then updated template to include movie.name, img, poster, etc, in {{}}. don't forget :for src
   - also added :style="`background-image: url(${movie.backdrop}`"
   - updated styling a bit. 
+
+
+  Wednesday, December 7th, 2022
+  GregsListVue w/auth
+
+  * Switch out my env file later when it's time for lab
+
+  1. run npm i in terminal, spin up server.
+  2. Deleted About page, and added Cars, Houses, and Jobs page
+  3. went to router.js, got rid of about, added 
+  {
+  path: '/cars'
+  name: 'Cars',
+  component: loadPAge("CarsPage")
+  }
+  and same for jobs and houses.
+  * now if we update url w/specific page, should see what we put in template.
+  * in navbar had to comment out router link for about page to stop errors.
+  * added router links for cars, jobs, houses in navbar
+  * check page and should see navbar links that take us to the right page.
+
+  4. fill in our env.js file w/our info.
+  * on webpage, login and check network to see token, userinfo, and account. 
+  * token and userinfo come from auth0, account is your info in the database. 
+  * if you don't see one of these, something wasn't linked right
+
+  5. CarsPAge --> script --> added getCars() w/async, trycatch, etc. 
+  - got to await and realized we needs carsservice, created w/skeleton and base for ALL functions w/throw new error
+  - created getCars() w/ const res, logger,
+    - the api should lead to baseURL, which is in our env file, so make sure that's correct. 
+  - back to carsPAge, finished getCArs(), 
+  - added onMounted above return because we want cars to load on initial load. 
+  - checked webpage, click cars button, should see empty array or cars that are already there in console.
+
+  6. want to save cars. go to appstate. add cars = []
+  carsservice --> add appstate.cars = res.data
+  carspage --> add to return cars: computed...
+    - now should see messy data for cars on page (IF you have data in db already)
+    - not adding a model here because it will just be added to our components. this is because we own the database, so we can just do it on backside. Remember he does have a backend server running, so that's why this works right now. 
+  
+  7. made carCard component
+  carsPage --> added template details w/ <CarCard />
+  - v-for on the col before the CarCard
+  v-for="c in cars"
+  - CarCard --> added card to template w/ details we want
+
+  8. carspage --> updated CarCard w/ :car="c"
+  - carcard --> added to default export: props: {car: {type: Object, required: true}}
+  - update template w/ car.imgUrl, etc. 
+  - updated styling w/car height and img{object-fit} // w/scss can nest classes for styling.
+
+  9. Now let's create a car!
+  - standard version - create car form component and put <CarForm /> in template
+  - carForm --> added forms for all needed deets and button to submit.
+  * form action acts like img-fluid in keeping form elements relatively responsive/fluid based on screen size. 
+
+  10. need to connect form input to script 
+  - carForm --> setup() add const editable = reactive({})
+  * now in template updated all to have v-model="editable.make" etc (make sure they all match correctly. )
+  * be sure to return editable
+  * back in form, add @submit.prevent="createCar()"
+  * add createCar() in return (after editable). be sure to pass it the editable (this is the banana word we linked to form earlier...editable could be whatever we want...carDAta, etc.)
+  - service --> update createCar() w/post, logger, appstate.cars.push(res.data)  (newest stuff at bottom is push, newest at top is unshift...pick between these depending on how you want it to load).
+
+  11. now add new car to webpage to make sure it works. 
+
+  12. carform --> showed example using ref instead of reactive and why it didn't work. using ref accesses editable.value instead of just editable, causes issues. so use reactive here, unless you're trying to access the value.
+    - reactive = meant for objects, red = meant for values. 
+
+  13. hook up cancel button
+    -carform --> add @click="editable = {}"
+
+  14. some of cars have creator, let's get creator info here
+  - carcard --> in template add img tag for user icon and span for name. 
+  - got error because not all have creators, so added v-if to div tag. added styling to make prettier.
+
+  15. carCard --> add delete button, styling
+  - want to only show if you're cretor
+     - to carCard --> template, added v-if to delete button. also added account: computer(()) to return. 
+     * check site and see if button shows for creator.
+  - make delete function: add @click to button
+  - make delete() to return. how do we find car id? 
+    - tried putting carId in, but said car is not defined. 
+    - you can pass id from template or you can pull it from props. props exist outside of setup, so need to add to setup to get acces..
+    aawit carsSErvice.removeCar(props.car.id)  // can remove the id from async removeCar(id) but only if you're using props. If you are passing from template, need it there still (as well as in the await).
+  - carservice --> to remove add const res = await api.delete... logger, appstate w/splice
+  - deleted car from page and it worked, but the above isn't best way (see comment).
+  - updated appstate line w/ let index = appstate...   this way allows debugging to be easier. 
+
+  16. Edit car
+  * made carDetails page, register it with router by adding
+  {
+    path: '/cars/:id',
+    name: 'CarDetails',
+    component: loadPage('CarDetailsPage')
+  }
+  * yesterday we did router link, today we're going to do router push. This just changes WHEN the data is pushed.
+    - carCard -> added to return under removeCar(), 
+    goto() {
+
+    } 
+    to setup() added const router = useRouter(),
+    updated the goto() w/router.push and logger
+    then updated template w/ @click='goTo'
+
+  - car details page --> each page needs to be responsible for its own data. how does it get the details?
+    - add getCarById() to setup()    //where is the id though? there's no car on this page, so where do we get it from? the url...
+    - need to add const route = useRoute() outside of return, then update the (route.params.id) in the getCarById()
+    - carsservice --> update getCarById(id) 
+    - appstate - add activeCar = null
+    - then update carsservice w/ appstate line. 
+    - didn't work because we need to fun getCarById in onMounted. should now see the details in console, 
+    - added {{car}}  to template on cardetailspage, then added computed in script return for this. should now see messy data on page.
+    - created template for how we want this to work (took out {{car}}). should now see deets on page.
+
+  17. want to be able to edit if it's your post
+    - add button to template in cardetailspage
+    - added const editMode = ref(false) to setup, changed something in function, then in template added v-if="editMode..."
+    - add @click to edit button
+    - add v-if to top layer of container to check for car so it actually shows. 
+    - added v-else to end of template w/ <CarForm />
+    - added edit for save button after that.
+    - added async editCar to script 
+    - updated <CarForm /> to include :carData="car", then added props to export default
+    
+  18. changed create and save buttons to have v-if and v-else, updated @click to handleSubmit. 
+  - carform --> moved createCar to outside of return, also added editCar() outside of return. 
+  - in rturn, made handleSubmit() 
+  - carservice --> finished editCar() 
+
+  - car can be edited now but isn't going back to cardetails
+    - use emit (black magic)
+    - cardetailspage --> create our own event in template w/ @carEdited="(editMode = false)" in <CarForm.../>
+    - in editCar function, put emit('carEdited')  // this tells parent object something has happened. this should flip it. 
+    * generally data should be passed through props or appstate, so using emit isn't common/is probably harder way to do it. 
+
+Review router links
+- look at navbar.vue and router.js
+* each router link points to route w/in page. the :to tells it to go to the path, the object tells which one. 
+* router push is within setup, but still directs to router.
+
+
+Thursday, December 8th, 2022
+** WB practice - adventOfCode and edabit.com
+
+Project - Art Terminal
+1. updated env.js. 
+  - since we're using project sandbox, we're going to grab auth from that. 
+2. run npm i in terminal, then spin up 
+3. go to localhost:8080, login to make sure it's working.
+  - check network tab to make sure token, userinfo and account are all getting 200 oks
+4. updated sandbox api w/api/projects to see what projects are already in there.
+5. want to get the data that's there and save it in app state.
+  - homepage --> want to see everyone's posts -- > add onMounted to setup()
+  - add getProjects() (in setup, doesnt matter if above or below onMounted)
+  - filled out try w/services, but don't have yet, so created w/skeleton, then finished getProjects function
+  - note had to manually import projectService because it wouldn't load on its own.
+  - add getProjects() to onMounted
+  - --> service - create getProjects w/ const res and log the res.
+  * check console - should see projects from sandbox as array. 
+6. because we didn't write this api, it's good practice to make our own model for it
+  - made Project.js in models w/skeleton. 
+  - now need to store data --> appstate --> add projects = []
+  - service --> add appstate line so we can now actually store.
+  - did map here!
+  - check view tools to make sure appstate loaded with the projects. Don't need to log appstate here because we have vue tools now!
+
+7. Now let's log the data to the screen, doesn't need to be pretty.
+  - home page --> template --> {{projects}}  AND need to add a computed to the return.
+    ** this gives it an instance and draws from appstate (make sure computed and appstate imports here or it won't work! having lots of issues w/auto imports :(
+    **Now check page, should see raw data dump to page.
+
+8. Now let's figure out how we want to format data.
+  -homePAge --> template --> added row and col-12. col-12 has v-for="p in projects"
+  - got rid of {{projects}} and continued working on how we want to display data, but decided to make a new component right out of gate for projectCard.
+  - projectCard --> template --> started but need props to get component.
+    - script --> above setup props: {
+      project: {
+        type: Project,
+        required: true,
+      }
+    }
+  - homePage --> updated tempalte w/ <ProjectCard />
+  - added testing div and checked page, got testing
+  - homepage --> updated projectCard div
+  - projectCard --> updated template w/{{project.title}}   //should now see titles dumped on page. 
+  * generally when we v-for to inject data, we'll likely need a prop.
+
+9. Now let's build out projectCard
+  - style --> .bg-image {}   // check this out for styling of background image. 
+  - want background image to change per project
+  - in return added coverImg: computer(() => `url(${props.project.coverImg}`)    //had to manually import again, also added props inside setup() since we're using props here.
+  - then in style, updated background-image: v-bind(coverImg)    // this is just a dif way of doing this... helps limit inline styling
+  ** should now see all the dif cover imgs in cards on page. 
+
+10. now want toget profile img on card
+  - projectCard -> check console to find where creatorpic is stored. 
+  - in template add img tag w/ :src="project.creator.picture"   // also added :alt="project.creator.name" and class="img-fluid creator-img"
+  - added creator-img class to style to make prettier.
+
+11. now we want to be able to click on creator pic and go to their page to see all their posts. we need profiole page to do this. 
+- created ProfilePage.vue, updated template w/h1 for profile page
+- projectCard --> add router link here to take us to profile page. 
+  <router-link :to="{name: 'Profile'"              // when putting name, we didn't have one yet, so went to router and added path for '/profile/'', name, and component
+  - now check page, when you click creator pic, should now take you to profile page.
+  - what if we can store id of someone who was clicked on somewhere to the page
+  - updated router.js path to include the profile id
+  - checked page, got error because we're missing profile id,
+  - projectCard --> in router-link, supply params: {profileId: project.creatorId}     
+  - now we can use that id to make network request.
+  - profiolePage --> added onMounted to setup()  //be sure this imports 
+  - add function in setup() for getProfileByProfileId
+  - create ProfilesSErvice   before finishing above function, then finish await in profilePage
+  - we need id that's stored in params, so add to setup() const route = useRoute(), then in await add route.params. profileId
+  -then add that function to onMounted
+  - now add this function to service, first with just a logger to make sure we get a profileId in console that matches url.
+  - back to service --> update function w/ const res = await api.get('api/profiles/' + profileId), then log the res. 
+  - check console to make sure we're getting this data.
+
+12. projectCard --> updated img tag w/ :title=" Go to ${project.creator.name}"   //should now see "Go to __'s profile page" when hovering over profile pic.
+13. Now that we've gotten that data, let's store in appState.
+  - add activeProfile = null
+  - we don't have an activeProfile model, but we do have account model that matches pretty closely, update this model to include all data we want. 
+  - updated accountService appstate line...not necessary but a personal pref? 
+  - checked vue tools --> appstate shows null on some data, but that's good because we set || null in account model
+
+14. profileService --> add appstate.activeProfile = new Account(res.data)        //not mapping here because we just got one back, not an array. map is array method
+- checked vue tools and should see the data there.
+
+15. profilepage --> need to talk to appstate w/computed. put computed in return  (make sure it imports), 
+  profile: computed(()=> appstate.activeProfile)
+  - updated template here w/ {{profile.name}}  to see if we get that on page, check webpage to be sure the name is showing on each profile page.
+  - did a refresh and got error because activeProfile is null on load.
+  - updated profile page w/ v-if"profile"    so that it loads on load.
+
+16. profilePage --> add to script something.... missed this....go find! Or was it just setting up style for cover image? 
+  - added to template inline style with :style="`background-image: url(${profile.coverImg})`"   //notice backticks here!
+  - updated styling for cover-img.
+  - add :src for profile.picture in img tag, h1, h2 for profile name and bio, updated style for profile-picture
+  - did lots of styling here
+
+17. updated url w/ api/project/?creatorId=844u3q89feeawnkef.ka
+* this pulled up all projects for that creator
+- profilepage --> added getProjectsByCreatorId() in setup()
+  - be sure to pass route.params.profileId through function
+- service --> add this function here, being sure to pass creatorId here. 
+  const res = await api.get('api/projects', {params: {creatorId: creatorId}})   // this will append the url w/creator id provided. formats it as a query, like what we did in our url earlier.
+  -and add a logger
+  - didn't work because we didnt add function to onMounted.
+  - check webpage, make sure the info we're getting matches who actually created. 
+  - now we need to save to appstate, so in service add our appState.projects = res.data.map(p => new Project(p))    // again can map here because we're adding to array. Since we already have projects in appState, this is fine. 
+
+18. when on profile page, how will we render data to page?
+  - profilepage -> move vi-if="profile" to row w/profile.coverImg
+  - add new row w/col-4, add v-for="p in projects" , but we haven't brought in projects yet, so add a projects: computed (() => appstate.projects) to script. 
+  - added {{p.title}} to template, then check webpage. 
+  - after checking, since this new data will be the same as the projectcard, which we already have, lets reuse.
+  - bring in project card element to template, but also need to pass in the prop because it's expecting a param to be passed in order to render.
+    - update the above w/ :project="p"
+    ** check page, should now see it rendered to page. 
+    - update styling. 
+  - projectcard --> in setup() add const route = useRoute(), we'll use this route in our v-if, but we also have to add route, to return, now to router-link in template add v-if="route.name == 'Home'"    // this takes the profile image off of post in their own profile page. it was redundant so not needed.
+
+19. how do we get to MY profile page? 
+  - login.vue component --> in template, copied router-link and added new one. updated new one w/ Go to your Profile Page, plus update name: Profile
+  ** checked webpage but got error because params not supplied. 
+  - login --> add params: {profileId: account.id}    // we already brought in account in computed, so let's just reuse this here. 
+  ** got erro and had to add v-if="account" to the router link in login, still didn't work. went to login again and update v-if w/ account.id
+  ** on webpage, when you click the login button, should now see go to profile page option, and it should take you to users account page. 
+
+  - in router, notice the account path has beforeEnter: authGuard, which prevents user from accessing their account w/o being logged in.
+    - authGuard is built in package that's preinstalled for us.
+
+20. Let's write a form for Account Page --> grabbed from bootstrap, put in template and checked out in application.
+  - updated w/info we want, including submit button. make sure to put in <form>
+  - once happy w/ look, add const editable = ref({})        //be sure it imports!
+    - we want to take all account data and store it with the ref...
+    - so add watchEffect() in setup, under const editable
+      - similar to onMounted, but here we only want to run the code if he appstate.account.id is there   // notice it has editable.value because we're grabbing the value
+    * check webpage, nothing changed, so add editable to the return
+    - also v-model the editable.name in template. 
+    * check page and name should now update. this edits what's in the appstate, which we don't necessarily want to do, so in accountpage, update editable.value w/ {...appstate.account}   // this stops user from changing their name in appstate, but still can in form.
+    - now add v-model to rest of template for everything that's stored in appstate. 
+    * check page, should now auto populate that data to form. 
+  - add @submit.prevent to form. 
+  - add editAccount() in return ... link to accountsSERvice. make sure to pass in editable.value
+  - accountsService --> add editAccount(body)   // or formData...w/e you want.
+    - put const res and logger 
+    - update info in form. on submit should now see data pop up in console. 
+    - the page didn't update though, so we need to add appstate.account = new Account(res.data) to function in service.   // could just do res.data here, but new Account(res.data) is better...
+    - update form again and it should update w/o refresh!
+    - checked out profile page too
+
+21. now on homepage, want to add button on card to open model for the 
+  - app.vue - COULD put modal here  (under footer) so we have access on each page, BUT better choice is to create modal component (find modal in bootstrap)
+  - create modalComponent.vue, then in app.vue, add <ModalComponent />
+  - projectCard --> above router-link, add button for See Images
+  - add data-be-target and toggle, without won't work!
+  * check page, click see images and modal should now work.
+
+22. how to get all other images to load in modal? 
+  - need to set activeProject: null in appState
+  - projectCard -> find see image button, add @click="setActiveProjects", then updated return w/
+  setActiveProject() {
+    projectsService.setActiveProject(props.project)         //be sure service imports, alse need to pass something here so it knows which proj, so pass props.project, then log, check webpage, in console should see entire project passed after clicking see images
+  }
+  - update setActiveProject 
+
+23. now let's bring in active project to modal
+  - modalComponent --> add project: computed to return      // be sure appstate and computed import.
+  - in template, update modal title with {{project.title}}
+  - check webpage, should now see titles on modal. BUT getting error so we want to only render when we access appstate
+    - modalComponent --> add v-if"project" to modal content
+    - then update template modal-body w/ new container and col-12 w/ v-for="projects.projectImgs"
+    - also need img tag w/ :src="p", checked modal, loaded but needed to update styling. 
+
+24. want to show user how many imgs are in modal
+  - projectCard --> to see images add {{project.....}}
+
+25. want to see if someone's img array has my img
+  - add to return containsMe: computed(() =>  props.project.projectImgs.includes(appstate.account.picture))
+  - checkout vue tools --> use selector and click on dif project card, find includesMe to see true/false. 
+  - now want to alter something on page to see if a post has my image in it... make button red? 
+    - template --> add :class="`btn btn-outline-${includesMe ? 'danger' : 'light"
+    - button should now change if post has your img
+    - added i tag above see images w/ v-if="includesMe" so heart will show only if post includesMe.
+
+
+    Blogger -- copy entire env.js from ref for ours since we're using sandbox. 
+    Figma - first page = homepage, 2nd is their profile page, 
+    - stretch goal is to make entire blog post page w/comments possible. 
+   
