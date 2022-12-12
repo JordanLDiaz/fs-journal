@@ -443,7 +443,7 @@ vueFlix
   11. now add new car to webpage to make sure it works. 
 
   12. carform --> showed example using ref instead of reactive and why it didn't work. using ref accesses editable.value instead of just editable, causes issues. so use reactive here, unless you're trying to access the value.
-    - reactive = meant for objects, red = meant for values. 
+    - reactive = meant for objects, ref = meant for values. 
 
   13. hook up cancel button
     -carform --> add @click="editable = {}"
@@ -567,7 +567,7 @@ Project - Art Terminal
 9. Now let's build out projectCard
   - style --> .bg-image {}   // check this out for styling of background image. 
   - want background image to change per project
-  - in return added coverImg: computer(() => `url(${props.project.coverImg}`)    //had to manually import again, also added props inside setup() since we're using props here.
+  - in return added coverImg: computed(() => `url(${props.project.coverImg}`)    //had to manually import again, also added props inside setup() since we're using props here.
   - then in style, updated background-image: v-bind(coverImg)    // this is just a dif way of doing this... helps limit inline styling
   ** should now see all the dif cover imgs in cards on page. 
 
@@ -591,7 +591,7 @@ Project - Art Terminal
   - create ProfilesSErvice   before finishing above function, then finish await in profilePage
   - we need id that's stored in params, so add to setup() const route = useRoute(), then in await add route.params. profileId
   -then add that function to onMounted
-  - now add this function to service, first with just a logger to make sure we get a profileId in console that matches url.
+  - now add this function to service, first with just a logger to make sure we get a profileId in console (open up a project to view it's creator.id) that matches url.
   - back to service --> update function w/ const res = await api.get('api/profiles/' + profileId), then log the res. 
   - check console to make sure we're getting this data.
 
