@@ -177,6 +177,7 @@ Jerms was made collab on Post-It, cloned down, used Mick's env info.
 * Got rid of computed, added props for album (type: object), now need to pass down data to become the prop. so in template add :album='a' in <albumCard />
 - check page, styling is gone, so move styling over to this component. should now look how it did before. 
 
+<!-- ANCHOR continue here! -->
 4. Now looking at categories - want to set up buttons
   - homepage --> added row in container for them. design buttons
   - when we click on them, want to only show one to the page. how to?
@@ -403,3 +404,106 @@ Checkpoint Notes
     - stretch goal on figma for account page (myEvents that I've created, not required to pass)
     * for design requirements - code 1 and 2, can miss only 1 in each box to still pass that requirement. 
     - text-contrast - add shadow, make sure good contrast. Can use lighthouse in dev tools to see accessibility score. can also use element tool to hover over elements and see contrast score. 
+
+
+Wednesdsay, December 14th, 2022
+
+Adding back-end - access control
+  - what are users allowed to do? 
+    - when album is archived, we don't  want to lose the pics and collabs.
+
+1. albumSErvice --> get one function... change out findById w/findOne({_id: id, archived: false})      // quick and dirty way to handle soft deletes.
+  - Another way to handle - throw in another check:
+    if(album.archived) {
+      throw new forbidden('Can't modify an archived album')       // BUT this breaks the page so...
+    }     
+  - Better way....we want to modify albums info in pics service (create). place check above const pic
+    const album = albumsService.getOne(body.albumId)
+    if (album.archived) throw new forbidden('cant modify archived album)
+
+    ** we need above check in collabsService create function too. copy/paste, but will need to get rid of other const album
+    ** do again in collabsService remove()     //good notes in ref here, big function!
+      - this one needs to be changed more cuz we don't have album. needs to go after the if(collab.accountId.toString), update .getOne(collab.albumId)
+    - in postman, ran delete archive test, success. checked by sending post request for that archived album, got response that says can't modify archived album.
+
+2. collabsService --> add await collab.populate('profile album') in create() above return collab.
+  - did album cuz that is a virtual that needs to be populated when a collaborator is added. 
+
+Front-end
+  * shouldn't be able to collab multiple times (like not being able to buy multiple tickets for same event).
+  * want to hide buttons that don't need access to.
+
+1. if not logged in, shouldn't see add album button/modal
+  - navbar --> update that button w/ v-if="account.id"   //have to add id because it's empty object
+  - add computed for account  (make sure it imports)
+  - homepage --> want to remove collabs if not logged in
+    - add v-if="account.id && myCollabs.length > 0"        
+    - add computed for account
+2. on albumpage --> add ability to become collab.
+  - on collab button, add @click="becomeCollab"
+  - need albumId and accountId to become collab, accountID should be handled on backend,
+  - add async createCollab w/trycatch in return (after computeds)
+    await collabsService.createCollab({albumId: route.params.albumId})         // remember this is in return because we want user to have control over, otherwise would go outside of return.
+  - collabsSErvice --> add createColl(body) {
+    const res = await api.Post('api/collaborators', body)   // sending up body to collaborators
+    logger
+  }
+    - check network to see that it was sent, on refresh should see new collab added to list
+3. don't want to see add collab button on album page if not logged in.
+  - add computed for it on albumpage, add v-if for createCollab button in template. 
+  - back in collabsService, add appstate line.  
+    - where do we want to save it? collabs or mycollabs? 
+    - tried just collabs, worked for albumPage, but not fully.
+    - need to add to myCollabs in appstate too so that it renders on homepage tooo (see note about this).
+
+4. when we became collab, memberCount didn't go up. 
+  - collabsService --> update createCollab w/ 
+    appstate.activeAlbum.memberCount++               // this updates the memberCount on the activeAlbum and saves it to appstate
+5. once we're collab on album, want collab button to disappear.
+  - need to see if array of collabs has me in it... did something like this on artTerminal proj.
+  - albumPAge --> add to return:
+  includesMe: computed(() => AppState.collabs.find(c = c.accountId == appState.account.id))         // use find, this checks to see if you can find me in collabs for this album
+  - now we can update our v-if to includes && !foundMe
+  - if we want to return true or false, can add !! in front of appstate in computed ....if not worried, just leave off !! and check vue for object vs. undefined
+6. want to uncollab on album.
+  - copy createcollab button and add v-else-if="account.id", update @click for uncollab.
+  - add removeCollab function on albumPAge   - want id from object, so got rid of !!, updated removeCollab button w/foundMe.id, pass collabId as param for removeCollab function
+    await collabsService.removeCollab(collabId)
+  - declare to service -->
+    pass collabId here too 
+  - in albumPAge, update function w/
+    if(await Pop.confirm() {
+      await collabsService....
+    })
+    - update service w/ appstate line
+    appstate.collabs = appstate.collabs.filter(c => c.id !== collabId)     // do again w/myCollabs
+    appstate.myCollabs = appstate.myCollabs.filter(c => c.id !== collabId)
+    appstate.activeAlbum.memberCount--             // makes sure the count goes down.
+
+  7. now need to be able to add pictures to album
+    - update albumPage w/ button for add pic, include v-if="account.id && foundMe"    //makes sure we are collab on this album.
+    - want to bring in modal component we have to pop up 
+    -   add 
+    <ModalComponent > 
+      <PictureForm /> 
+    <ModalComponent />
+    - made pictureForm component  for this. update w/info we want
+      - add const editable = ref({}), return editable
+      - add v-models to form
+      - make sure you have toggle and target for modal 
+    * checked page, and add picture modal worked, but the new album button has switched to the pic modal instead of album because they have same id...will open the one it sees first in html (does pic one because album modal is below footer)
+      - how do we give each modal unique id's? 
+        - got rid of id for album modal in albumPAge, and added id="albumModal" directly on homePage <ModalComponent id="albumModal"
+        - albumPage --> add pictureModal id to modalComponent here. 
+        - be sure to update id on pictureModal buttons. 
+  8. need to finish createpic()
+    -picForm add createPicture() to return. pass editable.value!
+    - bring in const route = useRoute() to return
+    - add editable.value.albumId = route.params.albumId
+    - editable.value = {}
+    - declare createPicture() to service
+  
+  9. how do we tell if album is archived? 
+  - checked archived album and got error, don't want to see collab button if archived.
+  - albumPage --> added btn for disabled album w/ v-if="album.archived"   above other v statements...want to check if archived FIRST. 
+  * changed lots of stuff on this button...just look at ref.
