@@ -218,3 +218,89 @@ New proj.
 
   ** Can reuse method names and it will know which one to run based on params passed. 
   ** in put request, can pass in 2 params, shouldn't matter what order, c# can figure out.
+
+Wednesday, Jan 18th, 2023
+Post-It C#
+
+1. Open dotnet vue file and make new
+  - will need to get auth tokens (dummy one too).
+
+2. Setup - create model, controller, service, repo, table
+  - create albumb model first (prop tab will give you public ...)
+    * can add required to properties but had to update the global cs with something
+  - since we are using auth, also need to add creator id (just string now, not objectid like in mongoose)
+  - repo - added private readonly IDbConnection _db;
+  - service - added private readonly AlbumsRepository _repo;
+  - controller - added private readonly AlbumsService _albumsService
+  - also make sure to generate constructor on each of these pages
+  - startup - add transients for albums (repo must go before service)
+
+3. Create table in dbSetup for album
+- pancakes --> new query to establish connection
+- creatorId - want to tie this to account id, need to make sure the type is same (VARCHAR)
+  - after creatorId, added FOREIGN KEY (creatorId) REFERENCES accounts (id)
+  * this is what ties the creator id to id of account table. This will also prevent user from making album if no accountId
+  * this also allows us to hook into event, add ON DELETE CASCADE, this will delete album when account is deleted automatically. 
+- execute -- check table in pancakes
+- spin server, do postman test
+- dbSetup --> insert into albums, check table
+
+4. controller --> get request, declare to service, then repo, etc.
+  - run get request on postman
+  - dbsetup --> new SELECT where we will JOIN accounts ON accounts.id = creatorId;
+    - this will create a table where the account info is linked to the album info
+  - repo - update select w/ JOIN accounts ON al.creatorId = ac.id; also updated * to al.*, ac.*. updated db.Query to <Album, Account, Album>(sql, (album, account) =>
+  {
+    album.Creator = account;
+    return album;  // think of this like populating
+  }).ToList();
+  - had to add public Account Creator to album model
+  - save, respin, send  (got error so added the populate to repo), then respun and got creator attached to album data
+  * dbsetup is place to test out sql before doing it in repo, helps clarify if bug, is it sql or c# bug?
+
+5. Added new entry to table w/ archived album, so want to stop it from being shown
+  - services --> in get(), filtered
+  List<Album> filtered = album.FindAll(a => a.archived == false); return filtered
+  - controller --> bring in new service
+  private readonly Auth0Provider _auth0provider;
+  then in try for get() add 
+  Account userInfo = await _auth0provider.GetUserInfoAsync<Account>(HttpContext);
+  (go get account info, make request to another server, so await, will return account data type, gets token from http context)
+  - had to wrap ActionResult in Task<> because get was mad
+  - update get w/ userinfo.id
+  - service --> update get w/ string userId
+    - updated == false to || a.creatorId == userId
+
+6. Controller - Post request
+  - put [Authorize] after [HttpPost] to affect capabilities when logged in (only put this after requests you want user to be authorized to do)
+  - follow request all the way through service and repo
+  - controller --> add album.Creator = userInfo; because we need creatorId at top level. without this wont see creator info in postman request.
+
+7. Get One
+- should be able to look at if logged in or not
+- controller --> try: Account userInfo = await _auth0Provider.GetUserInfoAsync<Account>(HttpContext);
+Album album = _...
+- repo - select looks like get, but add where al.id = @id;
+* FirstOrDefault only returns one
+- service --> update for access control
+  if(album.Archived == true && album.CreatorId != userId)
+  {
+    throw new Exception("You don't own that")
+  }
+  * respin and send request, should see ones I own
+  * if you do no auth, should see you dont own that message
+
+8. Delete
+- service
+{
+  Album original = GetOne( id, userId);
+  if (original.creatorId != userId)
+  {
+    throw new Exception("Not your album.")
+  }
+  original.Archived = !original.Archived;
+  _repo.Update(original);    // added update to repo so this was possible
+  return $"{original.Title} has been archived"
+}
+
+
