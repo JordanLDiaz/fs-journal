@@ -303,4 +303,149 @@ Album album = _...
   return $"{original.Title} has been archived"
 }
 
+Thursday, Jan 19th, 2023
+Continuring Post-it
+
+* He updated proj back end with pictures controller, service, repo, model
+
+1. albumController -> adding get for picturebyalbumId
+  - [HttpGet("{id}/pictures")]
+  public async Task<ActionResult<List<Picture>>> GetPictures(int id)
+  {
+    try 
+    {
+      Account userInfo = await _auth0provider.GetUserInfoAsync<Account>(HttpContext);
+      List<Picture> pictures = _picturesService .GetPicturesByAlbum(id);            // have to update private readonly w/ PicturesService here since we're bringing in a new service
+      return (Ok) pictures
+    }
+    catch (Exception e)
+    {
+      Return BadRequest(e.message)
+    }
+  }
+
+  picturesService --> internal List<Picture> GetPicturesByAlbum(int albumId)
+  {
+    List<Picture> pictures = _repo.GetPicturesByAlbum(albumId)
+    return pictures;
+  }
+
+  repo -> internal List<Picture> GetPicturesByAlbum(int albumId)
+  {
+    string sql = @"
+    SELECT
+    p.*,   // grabbing all from picture
+    a.*   // and grabbing all from account
+    FROM pictures p
+    JOIN accounts a ON p.creatorId = a.id
+    WHERE albumId = @albumId;
+    ";
+    List<Picture> pictures = _db.Query<Picture, Account, Picture>(sql, (picture, account) => 
+    {
+      picture.creator = account;
+      return picture;
+    }, new {albumId}).ToList();
+    return pictures;
+  }
+
+2. picturesSErvice --> in getpicturesbyalbum add albumsService in readonly
+  Album album = _albumsService.GetOne(albumId, userId) // in controller, also add userInfo?.Id to getuserinfoasync in try, also update internal list w/ string userId
+  * get one in albumservice already handles error handling, so don't need to add to pictureService
+  * respin, send post requests for multiple entries, do get request
+
+3. Create AlbumMember model (same as collaborator, but named differently because   . albumMember has many to many relationship)
+  - must have id, albumId, accountId
+  - dbsetup -> CREATE TABLE for albumMembers
+    * don't forget foreign key 
+    Foreign key (albumId) REFERENCES albums (id) ON DELETE CASCADE,
+    Foreign key (accountId) REFERENCES accounts (id) ON DELETE CASCADE,
+  -  new insert
+    INSERT INTO 'albumMembers'
+    ('albumId', 'accountId')
+    VALUES 
+    (5, 'id')
+  * execute and view table in pancakes
+
+  new SELECT
+  am.*,
+  ac.name
+  ab.title
+  FROM albumMembers am
+  JOIN accounts ac On am. 'accountId' = ac.id
+  JOIN albums ab ON am.'albumId' = ab.id;
+
+4. albumController --> add 
+[HttpGet("{id}/collaborators")]
+public async Task<ActionResult<List<Collaborators>>> GetCollaborators(int id)             // because we have collaborators now, make new model by extending account model (includes AlbumMemberId, as well as all other info from account model. it's just EXTENDING it)
+  try --> 
+  Account userInfo line (same as httpPost)
+  List<Collaborator> collabs = _collaboratorsService.GetCollaborators(id, userInfo.id)                //create collabsService and repo, update controller w/ collabsService readonly  
+    - collabsSErvice --> add readonly for albumsSErvice
+    - GetCollaborators -> 
+    {
+      Album album = _albumsSErvice.GetOne(albumId, userId);
+
+    };
+
+    - collabRepo -->
+    {
+      string sql = @"
+      SELECT
+      *
+      ac.*,
+      am.*
+      FROM albumMembers am           // getting account info, but selecting from albumMembers table because we don't want to see every account that exists
+      JOIN ac ON ac.id = am.accountId
+      WHERE am.albumId = @album.id
+      ";
+  return = _db.Query<AlbumMember, AlbumMember, Collaborator>(sql, (collab, albumMember) => (collab.albumMemberId = albumMember.id;
+  return collab;) )
+    } new {albumId}).ToList();
+
+    * don't forget transients for new tables (collaborators)
+    * made new table for albumMembers, but not collaborators, just join albumMembers and account which is our collaborators. Because we extended the account model to include albumMember stuff, we needed a new model to represent that, which allowed us to make a new albummember table that joined info from account. 
+
+5. Accountcontroller --> new get request for "albums" w/authorize
+  - album model -- extend album model w/ MyAlbum   w/ albumMemberId
+  - accountController -> GetAlbums  // don't forget to update constructor w/readonly
+  {
+    try
+  {
+    Account userInfo line
+    List<MyAlbums> myAlbums...
+  }
+  }
+
+  collabsservice --> function
+  collabsrepo --> SELECT
+  ab.*,
+  am.*,
+  cr.*
+  FROM albumMembers am
+  JOIN albums ab ON ab.id = am.albumId
+  JOIN accounts cr ON ab.creatorId = cr.id
+  WHERE am.accountId = @accountId; 
+  ";
+  List<MyAlbum> myAlbum = _db.Query<MyAlbum, AlbumMember, Account, MyAlbum>(sql, (ab, am, cr) => {
+    ab.AlbumMemberId = am.Id,
+    ab.Creator = cr;
+    return ab;
+  } new {accountId}).ToList();
+  return myAlbums;
+
+  ** showed simpler way to do GetCollaborators because we're not joining complex data (two objects), only wanting to add one new value. 
+  * did get request for accounts, saw data, then appended albums to url to see albums attached to that account. see albumMemberId in output because we're getting that data joined to account? 
+
+6. create new CollaboratorsController w/ post request (authorize)
+  * remember task signals we'll have to await something because order of actions needs to occur in certain order
+  - try: account userInfo  = ...
+  albumMemberDAta.AccounId = userInfo.id;
+  Collaborator collab = _collabsService.Create(albumMemberData);
+  return Ok(collab);
+
+  collabService --> repo
+
+
+
+
 
