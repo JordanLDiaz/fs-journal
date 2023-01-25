@@ -177,7 +177,6 @@ Jerms was made collab on Post-It, cloned down, used Mick's env info.
 * Got rid of computed, added props for album (type: object), now need to pass down data to become the prop. so in template add :album='a' in <albumCard />
 - check page, styling is gone, so move styling over to this component. should now look how it did before. 
 
-<!-- ANCHOR continue here! -->
 4. Now looking at categories - want to set up buttons
   - homepage --> added row in container for them. design buttons
   - when we click on them, want to only show one to the page. how to?

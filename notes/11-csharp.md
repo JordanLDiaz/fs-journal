@@ -446,6 +446,244 @@ public async Task<ActionResult<List<Collaborators>>> GetCollaborators(int id)   
   collabService --> repo
 
 
+  Monday Jan 23rd, 2023
+  InstaCult
+  * came in late missed cult deets...
+
+1. Models - Created cult.cs, cultMember.cs, RepoItem.cs
+    * added models and updated account model.
+  
+2. Now make tables for models
+  - connect to db (pancake)
+  - create cult table (with foreign key leaderId that references accounts id), cult members (foreign keys for cultID that references cults, and accountId that references accounts id)
+  - tested using insert for cults and cultMembers
+
+3. Cult post route
+  - make controller, service, repo
+  - Repo - hook it up, w/ private, generate constructor, repeat w/service and controller.
+  - startup - add transients
+  - update app dev settings
+  - controller -- write out post w/ authorize (pull in auth0provider in readonly and constructor)
+    - cultaData.LeaderId = userInfo.Id;
+    Cult cult = _cultsSErvice.Create(cultData);
+    return Ok(cult);
+  - service --> generate create from controller
+    - Cult cult = _repo.Create(cultData);
+    return cult;
+  - repo --> sql w/ insert for name, description, leaderId
+  - outside of sql -->
+  int id = _db.ExecuteScalar<int>(sql, cultDAta);
+  cultData.Id = id;   // fixes the id
+  return cultData;
+
+4. Cult Members (many to many)
+  - create controller, service, repo; update private readonly and constructor (don't forget auth0)
+  - ADD TRANSIENTS TO STARTUP!
+
+5. cultMembers post
+  - public async Task<ActionResult<Cultist> Create([FromBody] CultMember cultMemberData)
+    - account model --> extended account model w/
+      public class Cultist : Account
+      public int CultMemberId {get; set;}
+    - also added public class Profile : RepoItem<string> w/ string Name and string Picture
+    - also updated Account to extend profile and Cultist to extend profile ... this prevents other users from seeing others' emails. does make the account harder to look at.
+  - controller ->  try
+    cultMemberData.AccountId = userInfo.Id;
+    int id = _cultMemberSErvice.Create(cultMemberData);
+    userInfo.CultMemberId = id;
+    return userInfo;   (see now about why we constructed it this way)
+
+  - service --> straightforward, generate to repo
+  - repo --> 
+  string sql = @"
+  INSERT INTO cultMembers
+  (cultId, accountId)
+  VALUES
+  (@cultId, @accountId);
+  SELECT LAST_INSERT_ID();
+  ";
+  int id = _db.ExectureScalar<int>(sql, cultMemberData);
+  return id;    // this id goes back up to service, then back to controller, and is assigned to be the userInfo.CultMemberId before the return in controller.
+
+  - dbsetup --> ALTER TABLE cults
+  ADD COLUMN memberCount INT NOT NULL DEFAULT 0;
+  ** be careful altering tables, can easily get bad data if not careful. if early on in proj, just drop table and recreate
+
+  - cultsService -->   ** wrote function that requires get one, so added get one function before completing update.
+internal Cult GetOne(int id)
+{
+  Cult cult = _repo.GetOne(id);
+  if (cult == null) {
+    throw new exception($"No cult at id:{id}")
+  }
+  return cult;
+}
+
+  internal Cult Update(int id, Cult update)
+  {
+    Cult original = GetOne(id);
+    update.Name = update.NAme ?? original.Name;
+    etc...
+    _repo.Update(update);
+    return update;
+  }
+- repo - > write sql for getOne
+  - getOne
+  {
+    sql = @"
+    SELECT
+    c.*,
+    prof.*
+    FROM cults c
+    JOIN accounts prof ON prof.id = c.leaderId;
+    WHERE c.id = @cultId;
+    ";   //cult -- added leader to cult
+  Cult cult = _db.Query<Cult, === Profile, Cult>(sql, (cult, prof) => {
+  Cult.leader = prof;
+  return cult;
+  }, new {cultID}).FirstOrDefault();
+  return cult;
+  }
+
+  - repo - write sql for update (internal bool)
+    UPDATE cults SET 
+    name = @name;   etc...
+    WHERE id = @id;
+    ";
+    int rows = _db.Execute(sql, update);
+    return rows > 0;
+
+  -cultMembersSerivce --> 
+    - add CultService to class and constructor
+    - update create w/ Cult cult ....
 
 
+6. start client and server, go to localhost808
+- grab token for postman
+- run create test
+  * leader was null 
+- ran test for join cult, worked, checked sql table in dbsetup, saw membercount for that cult increase to 1.
 
+7. GetAll for cults
+  cultController --> straightforward
+  - declare to srvice --> straightforward
+  - declare to repo
+    sql = @"
+    SELECT 
+    cult.*,
+    prof.*
+    FROM cults cult
+    JOIN accounts prof ON prof.id = cult.leaderId;
+    ";
+    List<Cult> cults = _db.Query<Cult, Profile, Cult>(sql, (cult, prof) => {
+      cult.Leader = prof;
+      return cult;
+    }).ToList();
+    return cults;
+    * send postman get request, got good data
+
+  - update sql w/ 
+  LEFT JOIN cultMembers cm ON cult.id = cm.CultId
+  ** dbsetup --> showed this select with and without LEFT join, without left didn't get new cult at all. 
+    - also added COUNT(cm.id) AS calcMemberCount // will count all cult members that match
+    - needed GROUP BY (cult.id);    // takes results of join and tells how to group the data together
+  - updated sql in repo, note old regular one still there for ref.
+
+  - update getOne
+    - add WHERE cult.id = @cultId; to sql
+  
+  ** using the calculated membercount allows you to remove hardcoded member count from create in cultMemberService
+
+
+Review of postIt
+  -collab repo --> getMyAlbums  -- will be similar to favorites.
+  - getCollabs -- more like who are the people who have favorited this recipe...but don't need for allspice
+  - getmyalbums is like getmyfavorites. 
+
+Tuesday, Jan  24th, 2023
+InstaCult c# Day 2
+
+1. added GetOne in CultsController
+2. Get cult members by cultId
+  controller --> getting back list of cult members <cultist> (cult member is the many to many, cult member is singular member of a cult, so not many to many).
+    - sent to cultMemberService, so update in private and constructor
+    - write function (updated id to cultId), pass to repo
+  Repo --> 
+    SELECT
+    cm.*,
+    a.*
+    FROM cultMembers cm    // selecting that data from RELATIONSHIP TABLE
+    JOIN accounts a ON cm.accountId = a.id  
+    WHERE cm.cultId = @cultId;
+    ";
+    LIST<Cultist> cultists = _db.Query<CultMember, Cultist, Cultist>(sql, (cm, cultist) => {
+      cultist.CultMemberId = cm.Id;
+      return cultist;
+    }, new {cultId}).ToList();
+    return cultists;
+          // we are ultimately returning a cultist, not a cult member because cult member is just the relationship, cultist is the actual individual member that we are trying to get data on. 
+        <CultMember, Cultist, Cultist>   // matches order in select (a account is pulling the cultist data which is cultMemberId, then 3rd spot is Cultist because we want to get cultist data back. )
+        - in sql, (cm, cultist)   passing in params that match <CultMember, Cultist>
+        - set the cultMemberId on cultist = to cultMember Id, return singular cultist, then take that new cultId and add it to list of cultists.
+        - if we don't map here, the cultMemberId would come back null because it doesn't exist on profile table.
+
+    - Repo Item review
+      - repItem has T id, created/updated at. we extend profile w/ repo item,, need to specify int vs string because T Id exists in multiple places, but isn't always the same data type.
+
+3. Delete cult member
+  - cmController --> straightforward delete
+  - cmService --> pass in cmId, userId
+    bool result = _repo.Remove(cmId);
+    return "Someone has left the cult."
+  -cmRepo --> straightforward
+  - cmService --> updated w/ result == false check
+  
+  - only leader of cult should be able to delete many to many
+    - Where is the leaderId? on cult model
+    - get cult member, then use cult member to get the cult
+    - cultmemberSErvice --> CultMember cultMember = _repo.GetOneCultMember(cultMemberId)   // declare to cmrepo
+      - repo --> straightforward 
+    - back to service --> add if w/ null check, then go get the cult
+    cult cult = _cultsService.GetOne(cultMember.CultId);
+    if (userId != cult.LeaderId) throw new Exception...
+
+
+InstaCult Client
+
+  1. cultsService --> getCults
+    -homepage -- onMounted calls getCults, w/ async function below.
+    - see cults in console, now update service w/appstate, add cults to appstate,
+    - cults in computed, dump {{cults}} to page
+  
+  2. created cult card
+    - another way to do components - change script to script setup, get rid of export, write like js
+    - this is simpler, but takes away some control from devs, gets rid of private functions.
+    - in script - 
+    const props = define props({cult: {type: Object, required: true}})
+    - update template w/styling and details
+  
+  3. make cultpage - add route to router
+  - cultDetailsPAge - getCult() calling to cultsService w/getById, but don't forget const route = useRoute
+  - getCultMembers - call to cultsService
+  - add both () to onMounted
+  - in service - add functions, appstate uses activeCult, so update appstate w/ activeCult = null, same w/cultists = []
+    - update return w/computeds for both
+  - template styling for data
+  - add button for joining cult, add @click, then create function in return. 
+    - create cultMemberService
+      - joinCult().... need cultId (backend takes care of accountId). 
+      - in try: let cultMember = {cultId: route.params.id}
+      await cultMembersService.joinCult(cultMember)
+    - service --> pass in cultMember, 
+    - send to api/cultMembers, cultMember
+    - could null check cult.name, etc, but instead add v-if for cult
+    - click join btn, check payload to see what data we sent up (cultId: 2)
+    - don't want user to see join btn if not logged in, add computed for account, then add v-if="account"
+      - didn't work because account is {}, and activeCult = null, so need to do account.id
+  
+  4. remove cult member
+    - cult details page - add button w/ @click="removeMember"
+    - need to tell it which member, so need to pass single instance through (c.cultMemberId). This destroys relationship between cult and account, not the actual cult and account destroyed.
+  
+  5. hide remove button using v-if="account.id == cult.leaderId"
+  
