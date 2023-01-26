@@ -686,4 +686,118 @@ InstaCult Client
     - need to tell it which member, so need to pass single instance through (c.cultMemberId). This destroys relationship between cult and account, not the actual cult and account destroyed.
   
   5. hide remove button using v-if="account.id == cult.leaderId"
+
+
+Wednesday, Jan 25th, 2023
+Help Reviews
+
+* Interfaces - blueprint of a blueprint (blueprint of a class on server side)
+  - not something we need to do, but can if we want
+
+1. Made Restaurant model w/schema
+  - skeleton of controller, service, INTERFACE, then repo
+  - do interface before repo, called it IRepository though
+    - this will dictate what ALL of our repos will look like. 
+      public interface IRepository
+      {
+        List<Restaurant> Get();
+        Restaurant GetOne();
+        Restaurant Create();
+        bool Update();
+        bool Delete();
+      }
+  - then make RestaurantRepo : IRepository<Restaurant>
+    * this errored, but right clicked and implemented interface and it declared the methods within the repo (deleted this to updated what data we're passing)
+  - updated Irep<T, Tid>, put passed stuff into getOne, Update, Delete
+  - updated restaurantrepo w/ <Restaurant, int> 
+  - then declared interface again and now it has the methods declared w/more specifics for whats passed. Dictates bare minimum of what there should be.
+
+2. Now that we have skeleton of files, lets set up sqldb
+  - created restaurant table (don't forget to spin up sql db)
+  - did one insert, checked table
+
+3. controller --> setup privates, constructor,
+  get request - regular
+  - service --> pass in userInfo
+  regular but add...
+  List<Restaurant> filtered = restaurants.FindAll(r => !r.shutdown || r.OwnerId == userId);
+  // if restaurant is not shutdown or if you are the owner, return those restaurants
+  - repo - straightforward (select * from restaurants)
+
+4. getone -->
+  - controller - regular
+  - service --> regular
+  ACCESS CONTROL CHECKS
+  // no restaurant at that id
+    if(restaurant == null) {throw new exception("not a valid id.")}
+  // restaurant is shut down and you're not owner
+  if(restaurant.Shutdown && restaurant.OwnerId != userId) {throw new exception...}
+  - repo --> 
+  SELECT
+  *
+  FROM restaurants
+  WHERE id = @id;
+
+5. shutdown restaurant (could be done through put or delete, so let's do put)
+  -controller --> 
+    updateData.OwnerId = userInfo.Id // attaches these together so you can't update others
+    - updateData.Id = id;   // sets the data to same as the original id
+  - service --> Restaurant original = GetOne(updateData.Id, updateData.OwnerId)   // getone has some access checks already, so grabbing it here does this for our put
+    if(original.OwnerId != updateData.OwnerId) throw new exception // doesn't let you update if it's not your restaurant
+    original.Name = updatedData.Name ?? original.Name;    //etc
+    * did shutdown here and errored out, so went to model and did null check bool?
+    * this caused error in get one so had to updated restaurant.Shutdown to be == false
+  - repo -->
+  UPDATE restaurants SET
+  name = @name;   //etc
+  WHERE id = @id;
+  ''; 
+  int rows = _db.Execute(sql, update);
+  return rows > 0;   // this returns a bool to show if anything changed/happened.
+
+6.Create report model, decided to extend off account
+  - made profile class w/id, name, picture, added coverImg. account extends profile, has email only
+  - added public Profile Creator to report model
+
+7. build out controller, service, repo (here this extends IRepository<Report, int id>), then implement interface
+  - setup table dbsql w/foreign keys for creatorId and restaurantId
+  - add insert
+  - profile has brandimg, but didn't put in sql table, so alter table
+
+8. Post report
+  - controller and service --> regular
+  - repo -> regular
+  - back in controller, added reportDAta.creator = userInfo;
+
+9. Delete report
+  - regular controller
+  - got to service and decided we needed getOne so we can use in our delete (grabbing one)
+  - in repo for get one, did join for practice, but not totally necessary because it'll just be for backend for delete
+    * this complicates the Report report, so look closely.
+    - service for get one - check if null
+    - continue delete in service, after Report report = GetOne(id), add access controls to check for ownership of report
+  - repo --> regular
+
+10. From restaurants controller, want to add get so we can get reports for a restaurant
+  - list report that takes in int id
+  - try -> List<Report> report = _reportsService.GetReportsByRestaurant(id, userInfo.Id)        
+     // add to private/constructor
+  - reportsService --> changed int id to restaurantId, also pass userId
+    Restaurant restaurant = _restaurantsService.GetOne(restaurantId, userId)                             
+     //add restaurantsService to private/constructor so we can run the getOne to handle access control
+    List<Report> reports = _repo.GetReports(restaurantId)
+  - repo - > 
+    select
+    r.*,
+    a.*
+    from reports r
+    join accounts a on r.creatorId = a.id
+    where r.restaurantId = @restaurantId       // we want to get all reports from single restaurant
+
+11. postman tests
+  - had to update some access controls to make sure logic was correct after running postman tests and not getting the messages/data we expected.
+
+Thursday Jan 26th, 2023
+Help Reviews - Front End
+
   
