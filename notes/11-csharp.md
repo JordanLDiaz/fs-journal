@@ -800,4 +800,105 @@ Help Reviews
 Thursday Jan 26th, 2023
 Help Reviews - Front End
 
-  
+* Tested out getting dating through localhost7045 just to be sure our backend is solid
+* Update db data in table, easy way to get things updated. 
+
+Backend missing reportcount and exposure
+  Reportcount
+    - dbsetup --> 
+    select * from restaurants where id = @id;
+     gives us one restaurant but no report count in db, so we need to do new sql 
+     SELECT 
+     r.*,
+     COUNT(rep.id) AS reportCount
+     JOIN reports rep ON rep.restaurantId = r.id
+     WHERE r.id = 1;
+
+restaurant repo -->
+  - updated getone w/ above statement to test
+  - checked 7045 and report count updated
+
+restaurant service --> getone
+  - add restaurant.exposure ++;
+      _repo.Update(restaurant);  // put before return. notice sent to repo because sending to service put it in a loop w/get one and update, so just bypass service
+
+Back to front end
+1. Make restaurants service 
+  - getRestaurants() - normal
+  - added restaurant model (not necessary because its our own backend)
+  - updated appstate w/ restaurants
+2. homepage --> data dump
+  - getRestaurants in setup and onMounted and computed
+3. make restaurantCard component
+  - add props (since we created class, can do type restaurant, if no class, just do object)
+  - style it out...checkout hover card styling
+
+4. Now lets go to restaurant page
+  - router - add restaurant page
+  - create RestaurantPage
+  - put route on one part of card - don't do whole card because you may want other parts to have different functionality, in this case just put it on image
+    - this messed up our image width, so added w-100 to actual img class
+    - can put additional routes to same page on specific elements, that way you can target what you want to lead to other pages
+
+5. Restaurant page -->
+  - getRestaurantById()
+  - id comes from the route, so make sure to add const route = use route, add route.params.id to what we pass to service
+  - onmounted - getrestaurant, computed restaurant (update appstate)
+  - service - normal
+    -if we set to null in appstate and refresh on the restaurant page, it sets it back to null if you are doing any of the styling w/ v-binds. can keep as null as long as we add v-if="restaurant" (see v-else for loading here). Is best to just start objects as null
+  - update styling
+  - reload on page to make sure everything stays same
+
+6. Want to get reports on restaurant page -
+  - add getReports to getRestaurant so it runs both at same time, update service w/getReports()
+  - add reports to appstate []
+  - checked network and should see reports
+  - add computed for reports and data dump to page
+
+7. added v-if="debugging", throw debugging in return, add const debugging = ref(false).
+  - added @click for debuggin w/ bool that can flip so we can hide data dump during testing process
+
+8. Build report form
+  - recommend not building form in page, make component
+  - make reportForm.vue
+  - @click="handlesubmit", added ref for const editable, add editable to return
+  - add input fields in form for whatever we need.
+  - update handleSubmit() to send to reportsSErvice (look at endpoint and decide based on that)
+  - set report = res.data so we could just push the res.data as report
+  - back on form, update handle submit w/ {...editable.value, restaurantId: route.params.id}   as object   // this creates a copy of the data so that we're not passing the ref (we're use to seeing it as editable.value.restaurantId = route.params.id   but this doesn't create copy and makes it so we have to pass ref)
+  - editable.value = {} clears form
+  - restaurant page --> add reportForm component
+  - test it out w/ new report, see data in network,
+
+9. changed restaurant to shutdown, refreshed restaurant page and it stayed on loading. Want to still be able to see the restaurant page
+  - restaurant service client --> getrestaurantbyid -->
+      - updated logging res.data to just res so we can see all data
+      - updated error messaging for when restaurant is closed (incloude const isClosed = ref(false), also see v-if in template for if it's closed what to show. 
+      - caused us to move getReports out of getRestaurants so error messaging could be dif
+      - changed ownership of restaurant so we could play with data as restaurant is shut down, but should still see shutdown restaurants.
+      - updated router page w/ auth settled for restaurantpage (authsettled says auth has to be done loading, but not necessarily logged in like authguard)
+
+* did a bunch of styling over lunch, added report card, button, etc.
+
+10. Modal component w/ basic set up including slot created
+  - add modal component tag w/id= report-modal, then put whatever content we want in the modal component tag
+  - on modal component, added {{modalTitle}} for title of form, and added props for Modal Title
+  - showed example of building custom header using a slot.
+
+11. Want to use same modal for creating restaurant
+  - homepage --> add same modal tag w/ id for createRestaurant
+  - add button w/ data-bs-target="#create-restaurant"
+  - backdrop error = id probs****
+  - floating labels cool
+
+12. Shutdown restaurant
+  - on homepage --> added shutitdown() w/canshutdown computed. has rules built into computed for when it can be shut down. 
+  - since restaurant is null inappstate, gotta null check
+  - showed vbind bg-image
+  - added pop confirm
+  - finish shutitdown()  --> in service added appstate.shutdown = true, pass in appstate.restaurant w/id in url
+  ** notice shutdown = true is after sending to api because we want to make sure the put request goes through first. 
+  - test out and should change to true in network
+  - update restaurant page restaurant.name to include v-if its shutdown
+  - added reopen(), in sevice just flip the to false
+  - add new button for reopen w/ opposite v-if
