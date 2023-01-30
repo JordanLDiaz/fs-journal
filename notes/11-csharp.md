@@ -902,3 +902,30 @@ Back to front end
   - update restaurant page restaurant.name to include v-if its shutdown
   - added reopen(), in sevice just flip the to false
   - add new button for reopen w/ opposite v-if
+
+
+FRIDAY JAN 27th, 2023 FINAL
+Tips and tricks
+  - 3 grading attempts - reccommend getting partway graded by wed even if not complete so we can get feedback/help
+  - ducky still given if 100% passed by friday 5pm
+  - valut count on profile page should not include private vaults
+  - on account page, should include all private and public
+  - vaults can be private, but all keeps are public. 
+  - stretch goal postman tests not necessary, but will make front end way easier so do it!
+  - login with 2 people for postmans
+
+Notes From Final - Things to remember, mistakes to learn from
+  - Setup went smoothly until checking network, account failed...but why? Forgot to add s to http_:localhost7045 in env.js! silly goose!
+  - As of Saturday, all but 3 postman (stretch goals) tests were passing. Sunday went and added in view/kept things to try to pass those last 3 tests, passed all, then tried to rerun all tests. Now some aren't passing fully! Need to look into...
+    1. valid-auth --> delete keep   (passing 1/2...not sure why, ask for help monday!)
+    FIXED 2. valid-auth --> create vaultkeep
+    FIXED 3. valid-auth --> get keeps in vault
+    FIXED 4. valid-auth --> delete vaultkeep
+    FIXED 5. no-auth --> get keeps in public vault
+    FIXED 6. no-auth --> get keeps in private vault
+    FIXED 7. no-auth --> delete vaultkeep
+    FIXED 8. invalid-auth --> get keeps in private vault
+    FIXED 9. invalid auth --> delete vaultkeep
+    FIXED 10. stretch --> kept count decrements
+    ** issue... added an access control to create keeps that I meant to add to my create vaultKeeps!
+

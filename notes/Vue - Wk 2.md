@@ -19,7 +19,7 @@ Post-It
 * server play and debug terminal both have drop downs for both client and server, so make sure you're looking at the right ones.
 * once they're spun up, go to 8080 for client
 * login and check network, if all token, userinfo, and account come back with 200 ok, it means everything is connecting correctly and you should be good to go. 
-* if token and userinfo is bad, its client prob; if account its server prob. 
+* if token and userinfo is bad, its client prob; if account its server prob (OR YOU FORGOT TO ADD S TO HTTPLOCALHOST IN ENV.JS!)
 
 4. Looked at diagrams for relationships w/virtuals -
 * picture is in one album
