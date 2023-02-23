@@ -873,7 +873,7 @@ Back to front end
 9. changed restaurant to shutdown, refreshed restaurant page and it stayed on loading. Want to still be able to see the restaurant page
   - restaurant service client --> getrestaurantbyid -->
       - updated logging res.data to just res so we can see all data
-      - updated error messaging for when restaurant is closed (incloude const isClosed = ref(false), also see v-if in template for if it's closed what to show. 
+      - updated error messaging for when restaurant is closed (include const isClosed = ref(false), also see v-if in template for if it's closed what to show. 
       - caused us to move getReports out of getRestaurants so error messaging could be dif
       - changed ownership of restaurant so we could play with data as restaurant is shut down, but should still see shutdown restaurants.
       - updated router page w/ auth settled for restaurantpage (authsettled says auth has to be done loading, but not necessarily logged in like authguard)
@@ -917,7 +917,8 @@ Tips and tricks
 Notes From Final - Things to remember, mistakes to learn from
   - Setup went smoothly until checking network, account failed...but why? Forgot to add s to http_:localhost7045 in env.js! silly goose!
   - As of Saturday, all but 3 postman (stretch goals) tests were passing. Sunday went and added in view/kept things to try to pass those last 3 tests, passed all, then tried to rerun all tests. Now some aren't passing fully! Need to look into...
-    1. valid-auth --> delete keep   (passing 1/2...not sure why, ask for help monday!)
+    1. valid-auth --> delete keep   (passing 1/2...not sure why, ask for help monday!)   
+      Error = returns error when trying to get deleted keep, expected 400 but got 200 
     FIXED 2. valid-auth --> create vaultkeep
     FIXED 3. valid-auth --> get keeps in vault
     FIXED 4. valid-auth --> delete vaultkeep
@@ -928,4 +929,7 @@ Notes From Final - Things to remember, mistakes to learn from
     FIXED 9. invalid auth --> delete vaultkeep
     FIXED 10. stretch --> kept count decrements
     ** issue... added an access control to create keeps that I meant to add to my create vaultKeeps!
+
+    ** use @click.stop --> use to click one element within another element when wanting to route to a different page/component
+    
 
