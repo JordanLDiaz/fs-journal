@@ -32,12 +32,11 @@ MVC -
 - Any of the javascript files that are in templates, DONT CHANGE, these are just to reference
 
 Combat Tracker Notes
-- Start at the model - the blueprint that tells us what things will even look like.
 - Start w/ appstate.js (ONLY ONE PER PROJECT)
-  - Within this, created character.js and put:
+  - Then created character.js model and put:
   - export class Character {
 
-      constructor(name, tyoe, maxHealth, currentHealth)
+      constructor(name, type, maxHealth, currentHealth)
         this.name = name
         this.type = type
         this.maxHealth = maxHealth
@@ -48,7 +47,7 @@ Combat Tracker Notes
   - class character itself is a function - just defining what it will be, not actually creating it yet. 
   - this = special word that talks about itself, takes info that we will later provide and attach it to this character. 
 
-  back in app.js, created spaot to save our data:
+  back in app.js, created spot to save our data:
   - classes are made through 'new' keyword
   - when you added new Character below, it automatically added an import tag at top of appstate.js. if it doesn't, something isn't linked/typed correctly. DONT TYPE THESE YOURSELF! 
   - parentheses at end of new Character() contains the info you want to add, and tells it to do the function
